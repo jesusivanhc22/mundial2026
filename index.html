@@ -65,7 +65,7 @@ header{background:linear-gradient(135deg,#0b2040,#07101f);padding:10px 16px;bord
 /* pro bracket */
 .bk-wrap{overflow:auto;padding:8px 0}
 .bk-container{position:relative;display:inline-flex;align-items:stretch;min-width:1480px;min-height:760px}
-.bk-svg{position:absolute;top:0;left:0;pointer-events:none;z-index:0}
+.bk-svg{position:absolute;top:0;left:0;pointer-events:none;z-index:1}
 .bk-col{display:flex;flex-direction:column;justify-content:space-around;z-index:1;padding:2px 4px;flex-shrink:0}
 .bk-r32{width:168px}
 .bk-r16{width:168px}
@@ -932,10 +932,10 @@ function drawBracketLines(){
         if(!e2) continue;
         const r2=e2.getBoundingClientRect();
         const y2=r2.top+r2.height/2-cr.top;
-        p+=`<path d="M${x1} ${y1}H${mx}V${yT}H${xT}" fill="none" stroke="var(--bd)" stroke-width="1.5"/>`;
-        p+=`<path d="M${x1} ${y2}H${mx}" fill="none" stroke="var(--bd)" stroke-width="1.5"/>`;
+        p+=`<path d="M${x1} ${y1}H${mx}V${yT}H${xT}" fill="none" stroke="var(--txt2)" stroke-width="1.5"/>`;
+        p+=`<path d="M${x1} ${y2}H${mx}" fill="none" stroke="var(--txt2)" stroke-width="1.5"/>`;
       } else {
-        p+=`<path d="M${x1} ${y1}H${xT}" fill="none" stroke="var(--bd)" stroke-width="1.5"/>`;
+        p+=`<path d="M${x1} ${y1}H${xT}" fill="none" stroke="var(--txt2)" stroke-width="1.5"/>`;
       }
     } else {
       const x1=r1.left-cr.left, xT=rT.right-cr.left, mx=(x1+xT)/2;
@@ -944,10 +944,10 @@ function drawBracketLines(){
         if(!e2) continue;
         const r2=e2.getBoundingClientRect();
         const y2=r2.top+r2.height/2-cr.top;
-        p+=`<path d="M${x1} ${y1}H${mx}V${yT}H${xT}" fill="none" stroke="var(--bd)" stroke-width="1.5"/>`;
-        p+=`<path d="M${x1} ${y2}H${mx}" fill="none" stroke="var(--bd)" stroke-width="1.5"/>`;
+        p+=`<path d="M${x1} ${y1}H${mx}V${yT}H${xT}" fill="none" stroke="var(--txt2)" stroke-width="1.5"/>`;
+        p+=`<path d="M${x1} ${y2}H${mx}" fill="none" stroke="var(--txt2)" stroke-width="1.5"/>`;
       } else {
-        p+=`<path d="M${x1} ${y1}H${xT}" fill="none" stroke="var(--bd)" stroke-width="1.5"/>`;
+        p+=`<path d="M${x1} ${y1}H${xT}" fill="none" stroke="var(--txt2)" stroke-width="1.5"/>`;
       }
     }
   }
