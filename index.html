@@ -154,7 +154,11 @@ header{background:linear-gradient(135deg,#0b2040,#07101f);padding:10px 16px;bord
 .countdown{font-size:.82rem;font-weight:700;color:var(--ylw);text-align:center;padding:4px 0}
 .no-matches{text-align:center;padding:30px;color:var(--txt2);font-size:.85rem}
 
-/* scorers */
+/* stats */
+.stats-hero{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+.stat-pill{background:var(--s1);border:1px solid var(--bd);border-radius:8px;padding:10px 16px;flex:1;min-width:130px;text-align:center}
+.stat-pill .sv{font-size:1.4rem;font-weight:800;color:var(--gold)}
+.stat-pill .sl{font-size:.68rem;color:var(--txt2);margin-top:2px}
 .sc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:12px}
 .sc-tbl{width:100%;border-collapse:collapse;font-size:.76rem}
 .sc-tbl th{background:var(--s3);padding:6px 8px;text-align:left;color:var(--txt2);font-size:.65rem;font-weight:700;text-transform:uppercase}
@@ -220,7 +224,7 @@ header{background:linear-gradient(135deg,#0b2040,#07101f);padding:10px 16px;bord
   <div class="tab" onclick="go('gaf')">Grupos A–F</div>
   <div class="tab" onclick="go('ggl')">Grupos G–L</div>
   <div class="tab" onclick="go('bracket')">🏆 Bracket</div>
-  <div class="tab" onclick="go('gol')">⚽ Goleadores</div>
+  <div class="tab" onclick="go('gol')">📈 Estadísticas</div>
   <div class="tab" onclick="go('pred')">🔮 Predicciones</div>
   <div class="tab" onclick="go('ruta')">Ruta de Equipo</div>
 </div>
@@ -264,14 +268,31 @@ header{background:linear-gradient(135deg,#0b2040,#07101f);padding:10px 16px;bord
   </div>
 </div>
 <div id="p-gol" class="pane">
+  <div id="stats-summary" class="stats-hero"></div>
   <div class="sc-grid">
     <div class="snap-card">
       <div class="snap-hdr"><span class="snap-grp">🥇 Goleadores</span><span class="snap-md">Top 20</span></div>
-      <div class="snap-body" style="padding:0"><table class="sc-tbl" id="sc-goals"><thead><tr><th>#</th><th>Jugador</th><th>Goles</th><th>Asist.</th><th>Pen.</th><th>Min.</th></tr></thead><tbody><tr><td colspan="6" style="text-align:center;color:var(--txt2);padding:20px">Cargando datos…</td></tr></tbody></table></div>
+      <div class="snap-body" style="padding:0"><table class="sc-tbl" id="sc-goals"><thead><tr><th>#</th><th>Jugador</th><th>Goles</th><th>Asist.</th><th>Pen.</th><th>PJ</th></tr></thead><tbody><tr><td colspan="6" style="text-align:center;color:var(--txt2);padding:20px">Cargando datos…</td></tr></tbody></table></div>
     </div>
     <div class="snap-card">
       <div class="snap-hdr"><span class="snap-grp">🎯 Asistencias</span><span class="snap-md">Top 20</span></div>
-      <div class="snap-body" style="padding:0"><table class="sc-tbl" id="sc-assists"><thead><tr><th>#</th><th>Jugador</th><th>Asist.</th><th>Goles</th><th>Min.</th></tr></thead><tbody><tr><td colspan="5" style="text-align:center;color:var(--txt2);padding:20px">Cargando datos…</td></tr></tbody></table></div>
+      <div class="snap-body" style="padding:0"><table class="sc-tbl" id="sc-assists"><thead><tr><th>#</th><th>Jugador</th><th>Asist.</th><th>Goles</th><th>PJ</th></tr></thead><tbody><tr><td colspan="5" style="text-align:center;color:var(--txt2);padding:20px">Cargando datos…</td></tr></tbody></table></div>
+    </div>
+    <div class="snap-card">
+      <div class="snap-hdr"><span class="snap-grp">⚔️ Mejor Ataque</span><span class="snap-md">Por goles anotados</span></div>
+      <div class="snap-body" style="padding:0"><table class="sc-tbl" id="st-attack"><thead><tr><th>#</th><th>Equipo</th><th>GF</th><th>GC</th><th>DG</th><th>PJ</th><th>Prom.</th></tr></thead><tbody></tbody></table></div>
+    </div>
+    <div class="snap-card">
+      <div class="snap-hdr"><span class="snap-grp">🛡️ Mejor Defensa</span><span class="snap-md">Por goles recibidos</span></div>
+      <div class="snap-body" style="padding:0"><table class="sc-tbl" id="st-defense"><thead><tr><th>#</th><th>Equipo</th><th>GC</th><th>GF</th><th>VL</th><th>PJ</th><th>Prom.</th></tr></thead><tbody></tbody></table></div>
+    </div>
+    <div class="snap-card">
+      <div class="snap-hdr"><span class="snap-grp">🏅 Resultados</span><span class="snap-md">Rendimiento por equipo</span></div>
+      <div class="snap-body" style="padding:0"><table class="sc-tbl" id="st-results"><thead><tr><th>#</th><th>Equipo</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>Pts</th><th>%</th></tr></thead><tbody></tbody></table></div>
+    </div>
+    <div class="snap-card">
+      <div class="snap-hdr"><span class="snap-grp">🔥 Partidos Destacados</span><span class="snap-md">Goleadas y resultados</span></div>
+      <div class="snap-body" style="padding:0" id="st-highlights"></div>
     </div>
   </div>
 </div>
@@ -1055,6 +1076,7 @@ function renderAll(){
   if(gl){gl.innerHTML='';'GHIJKL'.split('').forEach(g=>gl.insertAdjacentHTML('beforeend',renderGroupCard(g)));}
   renderBracket();
   renderPredictions();
+  renderStats();
   renderRuta();
 }
 
@@ -1147,6 +1169,7 @@ async function fetchScorers(){
     const data=await r.json();
     _scorers=data.scorers||[];
     renderScorers();
+    renderStats();
   }catch(e){}
 }
 
@@ -1183,6 +1206,87 @@ function renderScorers(){
     });
     assistsBody.innerHTML=ah;
   }
+}
+
+function renderStats(){
+  const finished=_rawMatches.filter(m=>m.status==='FINISHED');
+  if(!finished.length){document.getElementById('stats-summary').innerHTML='';return;}
+
+  // Team aggregation
+  const teams={};
+  function tn(t){return mapName(t?.name)||mapName(t?.shortName)||t?.shortName||'?';}
+  function ensure(n){if(!teams[n])teams[n]={gf:0,ga:0,w:0,d:0,l:0,pj:0,cs:0};return teams[n];}
+  let totalGoals=0;
+  for(const m of finished){
+    const h=tn(m.homeTeam),a=tn(m.awayTeam);
+    const hg=m.score?.fullTime?.home??0,ag=m.score?.fullTime?.away??0;
+    totalGoals+=hg+ag;
+    const ht=ensure(h),at=ensure(a);
+    ht.gf+=hg;ht.ga+=ag;ht.pj++;
+    at.gf+=ag;at.ga+=hg;at.pj++;
+    if(ag===0)ht.cs++;if(hg===0)at.cs++;
+    if(hg>ag){ht.w++;at.l++;}else if(ag>hg){at.w++;ht.l++;}else{ht.d++;at.d++;}
+  }
+  const avg=(totalGoals/finished.length).toFixed(2);
+
+  // Summary pills
+  const pill=(v,l)=>`<div class="stat-pill"><div class="sv">${v}</div><div class="sl">${l}</div></div>`;
+  document.getElementById('stats-summary').innerHTML=
+    pill(finished.length,'Partidos jugados')+
+    pill(totalGoals,'Goles totales')+
+    pill(avg,'Promedio goles/partido')+
+    pill(finished.filter(m=>(m.score?.fullTime?.home??0)+(m.score?.fullTime?.away??0)===0).length,'Empates 0-0')+
+    pill(Object.keys(teams).length,'Equipos con actividad');
+
+  // Attack table
+  const atk=Object.entries(teams).sort((a,b)=>b[1].gf-a[1].gf||a[1].ga-b[1].ga).slice(0,15);
+  let ah='';atk.forEach(([n,t],i)=>{
+    const medal=i<3?'sc-top3':'';
+    ah+=`<tr class="${medal}"><td>${i+1}</td><td><div class="plr">${flag(n,17,12)}<span class="plr-name">${n}</span></div></td><td><strong>${t.gf}</strong></td><td>${t.ga}</td><td>${t.gf-t.ga>=0?'+':''}${t.gf-t.ga}</td><td>${t.pj}</td><td>${(t.gf/t.pj).toFixed(1)}</td></tr>`;
+  });
+  document.querySelector('#st-attack tbody').innerHTML=ah;
+
+  // Defense table
+  const def=Object.entries(teams).sort((a,b)=>a[1].ga-b[1].ga||b[1].cs-a[1].cs).slice(0,15);
+  let dh='';def.forEach(([n,t],i)=>{
+    const medal=i<3?'sc-top3':'';
+    dh+=`<tr class="${medal}"><td>${i+1}</td><td><div class="plr">${flag(n,17,12)}<span class="plr-name">${n}</span></div></td><td><strong>${t.ga}</strong></td><td>${t.gf}</td><td>${t.cs}</td><td>${t.pj}</td><td>${(t.ga/t.pj).toFixed(1)}</td></tr>`;
+  });
+  document.querySelector('#st-defense tbody').innerHTML=dh;
+
+  // Results table (by points/win%)
+  const res=Object.entries(teams).sort((a,b)=>{
+    const pa=a[1].w*3+a[1].d, pb=b[1].w*3+b[1].d;
+    if(pb!==pa)return pb-pa;
+    return (b[1].gf-b[1].ga)-(a[1].gf-a[1].ga);
+  }).slice(0,15);
+  let rh='';res.forEach(([n,t],i)=>{
+    const pts=t.w*3+t.d;
+    const pct=t.pj>0?Math.round(pts/(t.pj*3)*100):0;
+    const medal=i<3?'sc-top3':'';
+    rh+=`<tr class="${medal}"><td>${i+1}</td><td><div class="plr">${flag(n,17,12)}<span class="plr-name">${n}</span></div></td><td>${t.pj}</td><td>${t.w}</td><td>${t.d}</td><td>${t.l}</td><td><strong>${pts}</strong></td><td>${pct}%</td></tr>`;
+  });
+  document.querySelector('#st-results tbody').innerHTML=rh;
+
+  // Highlights
+  const sorted=finished.map(m=>{
+    const hg=m.score?.fullTime?.home??0,ag=m.score?.fullTime?.away??0;
+    return{h:tn(m.homeTeam),a:tn(m.awayTeam),hg,ag,total:hg+ag,diff:Math.abs(hg-ag),date:m.utcDate};
+  }).sort((a,b)=>b.total-a.total||b.diff-a.diff);
+
+  let hl='<table class="sc-tbl"><thead><tr><th></th><th>Partido</th><th>Resultado</th><th>Goles</th></tr></thead><tbody>';
+  const shown=new Set();
+  const topGoals=sorted.slice(0,5);
+  const topDiff=sorted.filter(m=>m.diff>0).sort((a,b)=>b.diff-a.diff).slice(0,5);
+  const combined=[...topGoals,...topDiff].filter(m=>{const k=m.h+m.a+m.hg+m.ag;if(shown.has(k))return false;shown.add(k);return true;}).slice(0,8);
+  combined.forEach((m,i)=>{
+    const d=new Date(m.date);
+    const ds=d.toLocaleDateString('es-MX',{day:'numeric',month:'short'});
+    const lbl=m.diff>=3?'🔥 Goleada':m.total>=4?'⚡ Golazo':'🏟️';
+    hl+=`<tr><td>${lbl}</td><td><div class="plr">${flag(m.h,17,12)}<span class="plr-name">${m.h}</span><span style="color:var(--txt2);margin:0 4px">vs</span>${flag(m.a,17,12)}<span class="plr-name">${m.a}</span></div></td><td><strong>${m.hg} – ${m.ag}</strong></td><td>${m.total} (${ds})</td></tr>`;
+  });
+  hl+='</tbody></table>';
+  document.getElementById('st-highlights').innerHTML=hl;
 }
 
 // ─── PREDICCIONES (Monte Carlo) ─────────────────────────────────────────────
