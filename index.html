@@ -378,7 +378,7 @@ const FLAGS = {
 function flagUrl(name,w=20){
   const c=FLAGS[name]; if(!c) return '';
   // flagcdn.com only supports specific widths
-  const valid=[20,24,28,32,36,40,48,56,64,80,96,128,160,256,320,640];
+  const valid=[20,40,80,160,320,640];
   const fw=valid.find(v=>v>=w)||20;
   return `https://flagcdn.com/w${fw}/${c}.png`;
 }
@@ -503,7 +503,7 @@ function fdText(match){
   // Format scheduled date in Mexico City time
   try{
     const d=new Date(match.utcDate);
-    return d.toLocaleString('es-MX',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'America/Mexico_City'});
+    return d.toLocaleString('es-MX',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
   }catch(e){return '';}
 }
 
@@ -1075,19 +1075,19 @@ let _rawMatches = [];
 // ─── PARTIDOS DE HOY ────────────────────────────────────────────────────────
 function renderToday(){
   const now=new Date();
-  const todayStr=now.toISOString().slice(0,10);
+  const localDate=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
   const todayMatches=_rawMatches.filter(m=>{
     if(!m.utcDate) return false;
     const d=new Date(m.utcDate);
-    const local=new Date(d.toLocaleString('en-US',{timeZone:'America/Mexico_City'}));
-    return local.toISOString().slice(0,10)===todayStr || d.toISOString().slice(0,10)===todayStr;
+    const ld=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    return ld===localDate;
   }).sort((a,b)=>new Date(a.utcDate)-new Date(b.utcDate));
 
   const titleEl=document.getElementById('today-title');
   const subEl=document.getElementById('today-sub');
   const grid=document.getElementById('today-grid');
 
-  const dateStr=now.toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'America/Mexico_City'});
+  const dateStr=now.toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   titleEl.textContent='Partidos — '+dateStr.charAt(0).toUpperCase()+dateStr.slice(1);
 
   const live=todayMatches.filter(m=>m.status==='IN_PLAY'||m.status==='PAUSED').length;
@@ -1114,10 +1114,10 @@ function renderToday(){
     else if(m.status==='FINISHED'){statusCls='fin';statusTxt='✅ FINAL';}
     else{
       const d=new Date(m.utcDate);
-      const timeStr=d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit',timeZone:'America/Mexico_City'});
+      const timeStr=d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
       const diff=d-now;
       if(diff>0&&diff<3600000){statusCls='soon';statusTxt='⏰ '+timeStr+' · Comienza en '+Math.ceil(diff/60000)+' min';}
-      else{statusTxt='🕐 '+timeStr+' hrs (CDMX)';}
+      else{statusTxt='🕐 '+timeStr+' hrs';}
     }
 
     const scCls=m.status==='IN_PLAY'||m.status==='PAUSED'?'live':m.status==='FINISHED'?'fin':'';
@@ -1142,7 +1142,7 @@ let _scorers = [];
 
 async function fetchScorers(){
   try{
-    const r=await apiFetch(`${FD_BASE}/competitions/WC/scorers?limit=25`);
+    const r=await apiFetch(`${FD_BASE}/competitions/WC/scorers?limit=80`);
     if(!r.ok) return;
     const data=await r.json();
     _scorers=data.scorers||[];
