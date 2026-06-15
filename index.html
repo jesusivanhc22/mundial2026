@@ -62,26 +62,32 @@ header{background:linear-gradient(135deg,#0b2040,#07101f);padding:10px 16px;bord
 .b-fin{background:#071a07;color:#86efac;border:1px solid #166534}
 .b-sch{background:var(--s3);color:var(--txt2);border:1px solid var(--bd)}
 
-/* r32 bracket */
-.bracket-wrap{overflow-x:auto;padding-bottom:8px;margin-top:8px}
-.bcols{display:flex;min-width:860px}
-.bcol{flex:1;border-right:1px solid var(--bd);min-width:195px}
-.bcol:last-child{border-right:none}
-.bcol-hdr{text-align:center;padding:8px;background:var(--s2);font-size:.72rem;font-weight:800;color:var(--gold);border-bottom:1px solid var(--bd);position:sticky;top:0}
-.bmatches{display:flex;flex-direction:column;height:100%}
-.bmatch{flex:1;display:flex;flex-direction:column;justify-content:center;padding:4px 7px;min-height:78px;border-top:1px solid var(--bd)}
-.bmatch:first-child{border-top:none}
-.bnum{font-size:.6rem;color:var(--txt2);text-align:center;margin-bottom:2px}
-.bteam{display:flex;align-items:center;gap:5px;padding:4px 6px;background:var(--s2);border:1px solid var(--bd);font-size:.73rem;min-height:25px}
-.bteam:first-of-type{border-radius:4px 4px 0 0;border-bottom:none}
-.bteam:last-of-type{border-radius:0 0 4px 4px}
-.bteam.win{background:#0a1f38;border-color:var(--acc);color:#90c0ff;font-weight:700}
-.bteam.tbd{color:var(--txt2);font-style:italic;font-size:.68rem}
-.bflag{width:15px;height:11px;object-fit:cover;border-radius:1px;flex-shrink:0}
-.bname{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.bsc{font-size:.75rem;font-weight:800;color:var(--gold);margin-left:auto;padding-left:3px}
-.bvenue{font-size:.58rem;color:var(--txt2);text-align:center;padding:2px 4px 0;opacity:.6}
-.bpos{font-size:.58rem;color:var(--txt2);opacity:.8;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* pro bracket */
+.bk-wrap{overflow:auto;padding:8px 0}
+.bk-container{position:relative;display:inline-flex;align-items:stretch;min-width:1480px;min-height:760px}
+.bk-svg{position:absolute;top:0;left:0;pointer-events:none;z-index:0}
+.bk-col{display:flex;flex-direction:column;justify-content:space-around;z-index:1;padding:2px 4px;flex-shrink:0}
+.bk-r32{width:168px}
+.bk-r16{width:168px}
+.bk-qf{width:168px}
+.bk-sf{width:168px}
+.bk-center-col{width:185px;justify-content:center;align-items:center;gap:8px;padding:0 8px}
+.bk-m{background:var(--s1);border:1px solid var(--bd);border-radius:6px;margin:3px 0;overflow:hidden;position:relative}
+.bk-center-col .bk-m{width:170px}
+.bk-mh{font-size:.6rem;font-weight:800;color:var(--txt2);padding:2px 7px;background:var(--s2);border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center}
+.bk-mt{display:flex;align-items:center;gap:5px;padding:4px 7px;font-size:.73rem;border-bottom:1px solid rgba(37,59,85,.3)}
+.bk-mt:last-child{border-bottom:none}
+.bk-mt.win{background:rgba(59,130,246,.12);font-weight:700}
+.bk-mt.tbd{color:var(--txt2);font-style:italic;font-size:.67rem}
+.bk-mf{width:26px;height:26px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid var(--bd);background:var(--s3)}
+.bk-mf-placeholder{width:26px;height:26px;border-radius:50%;flex-shrink:0;border:2px solid var(--bd);background:var(--s3);display:flex;align-items:center;justify-content:center;font-size:.6rem;color:var(--txt2)}
+.bk-mn{flex:1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bk-mp{font-size:.56rem;color:var(--txt2);font-weight:700;flex-shrink:0}
+.bk-ms{font-weight:800;color:var(--gold);font-size:.82rem;min-width:14px;text-align:right}
+.bk-trophy{font-size:2.8rem;text-align:center;line-height:1}
+.bk-flabel{font-size:.78rem;font-weight:800;color:var(--gold);text-align:center;text-transform:uppercase;letter-spacing:.5px}
+.bk-3rd-label{font-size:.68rem;font-weight:700;color:var(--txt2);text-align:center;margin-top:12px}
+.bk-center-col .bk-m:first-of-type{border-color:var(--gold)}
 
 /* group details */
 .ggroups{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px}
@@ -205,7 +211,7 @@ header{background:linear-gradient(135deg,#0b2040,#07101f);padding:10px 16px;bord
 </header>
 
 <div class="api-bar" id="api-bar">
-  <span id="api-status">⏳ Conectando con ESPN…</span>
+  <span id="api-status">⏳ Conectando con football-data.org…</span>
 </div>
 
 <div class="tabs">
@@ -213,8 +219,7 @@ header{background:linear-gradient(135deg,#0b2040,#07101f);padding:10px 16px;bord
   <div class="tab" onclick="go('snap')">📊 Corte</div>
   <div class="tab" onclick="go('gaf')">Grupos A–F</div>
   <div class="tab" onclick="go('ggl')">Grupos G–L</div>
-  <div class="tab" onclick="go('r32')">Ronda de 32</div>
-  <div class="tab" onclick="go('ko')">R16 · Cuartos · Final</div>
+  <div class="tab" onclick="go('bracket')">🏆 Bracket</div>
   <div class="tab" onclick="go('gol')">⚽ Goleadores</div>
   <div class="tab" onclick="go('pred')">🔮 Predicciones</div>
   <div class="tab" onclick="go('ruta')">Ruta de Equipo</div>
@@ -230,7 +235,7 @@ header{background:linear-gradient(135deg,#0b2040,#07101f);padding:10px 16px;bord
 
 <div id="p-snap" class="pane">
   <p style="font-size:.78rem;color:var(--txt2);margin-bottom:4px">
-    Proyección en tiempo real: equipos que clasificarían <strong style="color:var(--txt)">si la fase de grupos terminara ahora mismo</strong>, con los resultados actuales de ESPN.
+    Proyección en tiempo real: equipos que clasificarían <strong style="color:var(--txt)">si la fase de grupos terminara ahora mismo</strong>, con los resultados actuales de football-data.org.
   </p>
   <div class="snap-grid" id="snap-grid"></div>
 </div>
@@ -241,13 +246,22 @@ header{background:linear-gradient(135deg,#0b2040,#07101f);padding:10px 16px;bord
 <div id="p-ggl" class="pane">
   <div class="ggroups" id="g-gl"></div>
 </div>
-<div id="p-r32" class="pane">
-  <p style="font-size:.75rem;color:var(--txt2);margin-bottom:8px">Matches 73–88 · 28 Jun – 3 Jul · (*) = plaza para mejor 3°, asignada por tabla FIFA</p>
-  <div class="bracket-wrap"><div class="bcols" id="b-r32"></div></div>
-</div>
-<div id="p-ko" class="pane">
-  <p style="font-size:.75rem;color:var(--txt2);margin-bottom:8px">R16: M89–96 · Cuartos: M97–100 · Semis: M101–102 · 3°: M103 · Final: M104</p>
-  <div class="bracket-wrap"><div class="bcols" id="b-ko"></div></div>
+<div id="p-bracket" class="pane">
+  <p style="font-size:.72rem;color:var(--txt2);margin-bottom:6px">R32: M73–88 · R16: M89–96 · Cuartos: M97–100 · Semis: M101–102 · Final: M104 &nbsp;|&nbsp; (*) = mejor 3° asignado por tabla FIFA</p>
+  <div class="bk-wrap">
+    <div class="bk-container" id="bk-container">
+      <svg class="bk-svg" id="bk-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div class="bk-col bk-r32" id="bkc-lr32"></div>
+      <div class="bk-col bk-r16" id="bkc-lr16"></div>
+      <div class="bk-col bk-qf" id="bkc-lqf"></div>
+      <div class="bk-col bk-sf" id="bkc-lsf"></div>
+      <div class="bk-col bk-center-col" id="bkc-center"></div>
+      <div class="bk-col bk-sf" id="bkc-rsf"></div>
+      <div class="bk-col bk-qf" id="bkc-rqf"></div>
+      <div class="bk-col bk-r16" id="bkc-rr16"></div>
+      <div class="bk-col bk-r32" id="bkc-rr32"></div>
+    </div>
+  </div>
 </div>
 <div id="p-gol" class="pane">
   <div class="sc-grid">
@@ -440,15 +454,18 @@ const FD_BASE  = 'https://api.football-data.org/v4';
 // Sintaxis: https://corsproxy.io/?{url-encoded-target}
 function proxied(url){ return 'https://corsproxy.io/?' + encodeURIComponent(url); }
 
+async function apiFetch(url){
+  const hdrs={headers:{'X-Auth-Token':FD_TOKEN}};
+  try{const r=await fetch(url,hdrs);if(r.ok) return r;} catch(e){}
+  return fetch(proxied(url),hdrs);
+}
+
 async function fetchAll(){
   const btn=document.getElementById('rbtn');
   btn.classList.add('spin');
   setApiStatus('⏳','Conectando…','');
   try {
-    const r = await fetch(
-      proxied(`${FD_BASE}/competitions/WC/matches`),
-      { headers:{'X-Auth-Token': FD_TOKEN} }
-    );
+    const r = await apiFetch(`${FD_BASE}/competitions/WC/matches`);
     if(!r.ok) throw new Error(`HTTP ${r.status} — ${r.statusText}`);
     const data = await r.json();
     apiMatches = 0;
@@ -798,55 +815,143 @@ function grpDates(g){
   return {A:'11–24 Jun',B:'12–24 Jun',C:'13–24 Jun',D:'12–25 Jun',E:'14–25 Jun',F:'14–25 Jun',G:'15–26 Jun',H:'15–26 Jun',I:'16–27 Jun',J:'16–27 Jun',K:'17–27 Jun',L:'17–27 Jun'}[g]||'';
 }
 
-// ─── RENDER: BRACKET ─────────────────────────────────────────────────────────
-function bTeam(ref,mId){
+// ─── RENDER: PRO BRACKET ─────────────────────────────────────────────────────
+const BK_L32=['M74','M77','M73','M75','M83','M84','M81','M82'];
+const BK_L16=['M89','M90','M93','M94'];
+const BK_LQF=['M97','M98'];
+const BK_LSF=['M101'];
+const BK_R32=['M76','M78','M79','M80','M86','M88','M85','M87'];
+const BK_RR16=['M91','M92','M95','M96'];
+const BK_RQF=['M99','M100'];
+const BK_RSF=['M102'];
+
+function refShort(ref){
+  if(ref.startsWith('1_')) return '1'+ref[2];
+  if(ref.startsWith('2_')) return '2'+ref[2];
+  if(ref.startsWith('3_')) return '3°'+ref.slice(2);
+  if(ref.startsWith('W_')) return 'W'+ref.slice(2);
+  if(ref.startsWith('L_')) return 'L'+ref.slice(2);
+  return '';
+}
+
+function bkTeamRow(ref,mId,isHome){
   const name=resolve(ref);
+  const d=KO[mId]||{};
+  const hasScore=d.h!==undefined&&d.a!==undefined;
+  const sc=isHome?d.h:d.a;
+  const unres=name.startsWith('__3RD__')||name.startsWith('Gan.')||name.startsWith('Per.');
+  const m=ALL_KO.find(x=>x.id===mId);
+  const win=hasScore&&m&&((isHome&&+d.h>+d.a)||(!isHome&&+d.a>+d.h));
+  const lbl=refShort(ref);
 
-  // Unresolved 3rd-place slot — show groups label without picking a team
-  if(name.startsWith('__3RD__')){
-    const groups=name.slice(7).split('').join('/');
-    return `<div class="bteam tbd">
-<div style="width:20px;height:14px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--txt2)">?</div>
-<div style="flex:1;min-width:0;overflow:hidden">
-  <div class="bname" style="font-size:.72rem">Mejor 3°</div>
-  <div class="bpos">Gr. ${groups}</div>
-</div></div>`;
+  if(unres){
+    const display=name.startsWith('__3RD__')?'3° '+name.slice(7).split('').join('/'):lbl;
+    return `<div class="bk-mt tbd">
+<div class="bk-mf-placeholder">?</div>
+<span class="bk-mn">${display}</span>
+<span class="bk-mp">${lbl}</span>
+${hasScore?`<span class="bk-ms">${sc}</span>`:''}
+</div>`;
   }
 
-  const lbl=refLabel(ref);
-  const isGroupRef=ref.startsWith('1_')||ref.startsWith('2_')||ref.startsWith('3_');
-  const win=isWinner(mId,ref);
-  const d=KO[mId];
-  let sc='';
-  if(d&&d.h!==undefined&&d.a!==undefined){
-    const m=ALL_KO.find(x=>x.id===mId);
-    if(m){const rn=resolve(ref),ht=resolve(m.home),at=resolve(m.away);sc=rn===ht?d.h:rn===at?d.a:'';}
+  const fUrl=flagUrl(name,32);
+  return `<div class="bk-mt${win?' win':''}">
+${fUrl?`<img class="bk-mf" src="${fUrl}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt=""><div class="bk-mf-placeholder" style="display:none">?</div>`:`<div class="bk-mf-placeholder">?</div>`}
+<span class="bk-mn">${name}</span>
+<span class="bk-mp">${lbl}</span>
+${hasScore?`<span class="bk-ms">${sc}</span>`:''}
+</div>`;
+}
+
+function bkCard(mId){
+  const m=ALL_KO.find(x=>x.id===mId);
+  if(!m) return '';
+  const d=KO[mId]||{};
+  const badge=d.state==='in'?'<span class="badge b-live">LIVE</span>':
+              d.state==='post'?'<span class="badge b-fin">FIN</span>':'';
+  return `<div class="bk-m" id="bk-${mId}">
+<div class="bk-mh"><span>${mId}</span>${badge}</div>
+${bkTeamRow(m.home,mId,true)}
+${bkTeamRow(m.away,mId,false)}
+</div>`;
+}
+
+function renderBracket(){
+  const fill=(id,arr)=>{const el=document.getElementById(id);if(el) el.innerHTML=arr.map(bkCard).join('');};
+  fill('bkc-lr32',BK_L32);
+  fill('bkc-lr16',BK_L16);
+  fill('bkc-lqf',BK_LQF);
+  fill('bkc-lsf',BK_LSF);
+  fill('bkc-rsf',BK_RSF);
+  fill('bkc-rqf',BK_RQF);
+  fill('bkc-rr16',BK_RR16);
+  fill('bkc-rr32',BK_R32);
+  const center=document.getElementById('bkc-center');
+  if(center) center.innerHTML=`
+<div class="bk-flabel">FINAL · 19 Jul</div>
+<div class="bk-trophy">🏆</div>
+${bkCard('M104')}
+<div class="bk-3rd-label">3° Lugar</div>
+${bkCard('M103')}`;
+  if(document.getElementById('p-bracket')?.classList.contains('on'))
+    requestAnimationFrame(drawBracketLines);
+}
+
+const BK_CONNS=[
+  ['M74','M77','M89','r'],['M73','M75','M90','r'],
+  ['M83','M84','M93','r'],['M81','M82','M94','r'],
+  ['M89','M90','M97','r'],['M93','M94','M98','r'],
+  ['M97','M98','M101','r'],['M101',null,'M104','r'],
+  ['M76','M78','M91','l'],['M79','M80','M92','l'],
+  ['M86','M88','M95','l'],['M85','M87','M96','l'],
+  ['M91','M92','M99','l'],['M95','M96','M100','l'],
+  ['M99','M100','M102','l'],['M102',null,'M104','l'],
+];
+
+function drawBracketLines(){
+  const svg=document.getElementById('bk-svg');
+  const box=document.getElementById('bk-container');
+  if(!svg||!box) return;
+  const cr=box.getBoundingClientRect();
+  svg.setAttribute('width',cr.width);
+  svg.setAttribute('height',cr.height);
+  svg.setAttribute('viewBox',`0 0 ${cr.width} ${cr.height}`);
+  let p='';
+  for(const[id1,id2,toId,dir] of BK_CONNS){
+    const e1=document.getElementById('bk-'+id1);
+    const eT=document.getElementById('bk-'+toId);
+    if(!e1||!eT) continue;
+    const r1=e1.getBoundingClientRect();
+    const rT=eT.getBoundingClientRect();
+    const y1=r1.top+r1.height/2-cr.top;
+    const yT=rT.top+rT.height/2-cr.top;
+    if(dir==='r'){
+      const x1=r1.right-cr.left, xT=rT.left-cr.left, mx=(x1+xT)/2;
+      if(id2){
+        const e2=document.getElementById('bk-'+id2);
+        if(!e2) continue;
+        const r2=e2.getBoundingClientRect();
+        const y2=r2.top+r2.height/2-cr.top;
+        p+=`<path d="M${x1} ${y1}H${mx}V${yT}H${xT}" fill="none" stroke="var(--bd)" stroke-width="1.5"/>`;
+        p+=`<path d="M${x1} ${y2}H${mx}" fill="none" stroke="var(--bd)" stroke-width="1.5"/>`;
+      } else {
+        p+=`<path d="M${x1} ${y1}H${xT}" fill="none" stroke="var(--bd)" stroke-width="1.5"/>`;
+      }
+    } else {
+      const x1=r1.left-cr.left, xT=rT.right-cr.left, mx=(x1+xT)/2;
+      if(id2){
+        const e2=document.getElementById('bk-'+id2);
+        if(!e2) continue;
+        const r2=e2.getBoundingClientRect();
+        const y2=r2.top+r2.height/2-cr.top;
+        p+=`<path d="M${x1} ${y1}H${mx}V${yT}H${xT}" fill="none" stroke="var(--bd)" stroke-width="1.5"/>`;
+        p+=`<path d="M${x1} ${y2}H${mx}" fill="none" stroke="var(--bd)" stroke-width="1.5"/>`;
+      } else {
+        p+=`<path d="M${x1} ${y1}H${xT}" fill="none" stroke="var(--bd)" stroke-width="1.5"/>`;
+      }
+    }
   }
-  let pld=0;
-  if(ref.startsWith('1_')||ref.startsWith('2_')) pld=calcStandings(ref[2]).reduce((s,r)=>s+r.pld,0);
-  const provisional=isGroupRef&&pld===0;
-  return `<div class="bteam${win?' win':''}${provisional?' tbd':''}">
-<img src="${flagUrl(name,20)}" width="20" height="14" style="border-radius:2px;flex-shrink:0;object-fit:cover" onerror="this.style.display='none'">
-<div style="flex:1;min-width:0;overflow:hidden">
-  <div class="bname">${name}</div>
-  ${lbl?`<div class="bpos">${lbl}${provisional?' *':''}</div>`:''}
-</div>
-<span class="bsc">${sc}</span></div>`;
-}
-
-function bmatch(m){
-  const d=KO[m.id]||{};
-  const bdg=d.state==='in'?`<span class="badge b-live">EN VIVO</span>`:
-             d.state==='post'?`<span class="badge b-fin">FINAL</span>`:'';
-  const vn=d.venue?`<div class="bvenue">📍 ${d.venue}${d.city?', '+d.city:''}</div>`:'';
-  return `<div class="bmatch"><div class="bnum">${m.id} ${bdg}</div>
-${bTeam(m.home,m.id)}
-${bTeam(m.away,m.id)}
-${vn}</div>`;
-}
-
-function bCol(matches,label){
-  return `<div class="bcol"><div class="bcol-hdr">${label}</div><div class="bmatches">${matches.map(bmatch).join('')}</div></div>`;
+  svg.innerHTML=p;
 }
 
 // ─── RENDER: RUTA ─────────────────────────────────────────────────────────────
@@ -948,26 +1053,20 @@ function renderAll(){
   if(af){af.innerHTML='';'ABCDEF'.split('').forEach(g=>af.insertAdjacentHTML('beforeend',renderGroupCard(g)));}
   const gl=document.getElementById('g-gl');
   if(gl){gl.innerHTML='';'GHIJKL'.split('').forEach(g=>gl.insertAdjacentHTML('beforeend',renderGroupCard(g)));}
-  const r32=document.getElementById('b-r32');
-  if(r32) r32.innerHTML=bCol(R32.slice(0,8),'Lado A · M73–80')+bCol(R32.slice(8),'Lado B · M81–88');
-  const ko=document.getElementById('b-ko');
-  if(ko) ko.innerHTML=
-    bCol(R16.slice(0,4),'R16 Lado A')+bCol(R16.slice(4),'R16 Lado B')+
-    bCol(QF.slice(0,2),'Cuartos A')+bCol(QF.slice(2),'Cuartos B')+
-    bCol(SF,'Semifinales')+bCol([M3],'3° Lugar')+
-    `<div class="bcol" style="border:2px solid var(--gold);border-radius:4px;margin:2px"><div class="bcol-hdr" style="color:var(--gold)">🏆 FINAL · 19 Jul</div><div class="bmatches">${bmatch(MF)}</div></div>`;
+  renderBracket();
   renderPredictions();
   renderRuta();
 }
 
 function go(id){
-  const tabIds=['today','snap','gaf','ggl','r32','ko','gol','pred','ruta'];
+  const tabIds=['today','snap','gaf','ggl','bracket','gol','pred','ruta'];
   document.querySelectorAll('.tab').forEach((t,i)=>{
     t.classList.toggle('active',tabIds[i]===id);
   });
   document.querySelectorAll('.pane').forEach(p=>{
     p.classList.toggle('on',p.id==='p-'+id);
   });
+  if(id==='bracket') requestAnimationFrame(()=>requestAnimationFrame(drawBracketLines));
 }
 
 // ─── RAW MATCH DATA (stored from API for today/scorers) ──────────────────────
@@ -1043,7 +1142,7 @@ let _scorers = [];
 
 async function fetchScorers(){
   try{
-    const r=await fetch(proxied(`${FD_BASE}/competitions/WC/scorers?limit=25`),{headers:{'X-Auth-Token':FD_TOKEN}});
+    const r=await apiFetch(`${FD_BASE}/competitions/WC/scorers?limit=25`);
     if(!r.ok) return;
     const data=await r.json();
     _scorers=data.scorers||[];
