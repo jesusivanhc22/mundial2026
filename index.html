@@ -155,6 +155,14 @@ header{background:linear-gradient(135deg,#0b2040,#07101f);padding:10px 16px;bord
 .no-matches{text-align:center;padding:30px;color:var(--txt2);font-size:.85rem}
 
 /* stats */
+.awards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:14px}
+.award-card{background:linear-gradient(135deg,var(--s2),var(--s1));border:1px solid var(--bd);border-radius:8px;padding:12px 14px;text-align:center}
+.award-card.gold{border-color:var(--gold)}
+.award-icon{font-size:1.6rem;margin-bottom:4px}
+.award-title{font-size:.68rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.award-player{font-size:.9rem;font-weight:800;margin-bottom:2px}
+.award-team{font-size:.72rem;color:var(--txt2)}
+.award-stat{font-size:.75rem;color:var(--acc);margin-top:4px;font-weight:700}
 .stats-hero{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px}
 .stat-pill{background:var(--s1);border:1px solid var(--bd);border-radius:8px;padding:10px 16px;flex:1;min-width:130px;text-align:center}
 .stat-pill .sv{font-size:1.4rem;font-weight:800;color:var(--gold)}
@@ -269,6 +277,7 @@ header{background:linear-gradient(135deg,#0b2040,#07101f);padding:10px 16px;bord
 </div>
 <div id="p-gol" class="pane">
   <div id="stats-summary" class="stats-hero"></div>
+  <div id="fifa-awards" class="awards-grid"></div>
   <div class="sc-grid">
     <div class="snap-card">
       <div class="snap-hdr"><span class="snap-grp">🥇 Goleadores</span><span class="snap-md">Top 20</span></div>
@@ -946,6 +955,7 @@ function drawBracketLines(){
     const rT=eT.getBoundingClientRect();
     const y1=r1.top+r1.height/2-cr.top;
     const yT=rT.top+rT.height/2-cr.top;
+    const S='stroke="var(--acc)" stroke-width="2" opacity="0.7"';
     if(dir==='r'){
       const x1=r1.right-cr.left, xT=rT.left-cr.left, mx=(x1+xT)/2;
       if(id2){
@@ -953,10 +963,12 @@ function drawBracketLines(){
         if(!e2) continue;
         const r2=e2.getBoundingClientRect();
         const y2=r2.top+r2.height/2-cr.top;
-        p+=`<path d="M${x1} ${y1}H${mx}V${yT}H${xT}" fill="none" stroke="var(--acc)" stroke-width="2" opacity="0.7"/>`;
-        p+=`<path d="M${x1} ${y2}H${mx}" fill="none" stroke="var(--acc)" stroke-width="2" opacity="0.7"/>`;
+        p+=`<path d="M${x1} ${y1}H${mx}" fill="none" ${S}/>`;
+        p+=`<path d="M${x1} ${y2}H${mx}" fill="none" ${S}/>`;
+        p+=`<path d="M${mx} ${y1}V${y2}" fill="none" ${S}/>`;
+        p+=`<path d="M${mx} ${yT}H${xT}" fill="none" ${S}/>`;
       } else {
-        p+=`<path d="M${x1} ${y1}H${xT}" fill="none" stroke="var(--acc)" stroke-width="2" opacity="0.7"/>`;
+        p+=`<path d="M${x1} ${y1}H${xT}" fill="none" ${S}/>`;
       }
     } else {
       const x1=r1.left-cr.left, xT=rT.right-cr.left, mx=(x1+xT)/2;
@@ -965,10 +977,12 @@ function drawBracketLines(){
         if(!e2) continue;
         const r2=e2.getBoundingClientRect();
         const y2=r2.top+r2.height/2-cr.top;
-        p+=`<path d="M${x1} ${y1}H${mx}V${yT}H${xT}" fill="none" stroke="var(--acc)" stroke-width="2" opacity="0.7"/>`;
-        p+=`<path d="M${x1} ${y2}H${mx}" fill="none" stroke="var(--acc)" stroke-width="2" opacity="0.7"/>`;
+        p+=`<path d="M${x1} ${y1}H${mx}" fill="none" ${S}/>`;
+        p+=`<path d="M${x1} ${y2}H${mx}" fill="none" ${S}/>`;
+        p+=`<path d="M${mx} ${y1}V${y2}" fill="none" ${S}/>`;
+        p+=`<path d="M${mx} ${yT}H${xT}" fill="none" ${S}/>`;
       } else {
-        p+=`<path d="M${x1} ${y1}H${xT}" fill="none" stroke="var(--acc)" stroke-width="2" opacity="0.7"/>`;
+        p+=`<path d="M${x1} ${y1}H${xT}" fill="none" ${S}/>`;
       }
     }
   }
@@ -1237,6 +1251,45 @@ function renderStats(){
     pill(avg,'Promedio goles/partido')+
     pill(finished.filter(m=>(m.score?.fullTime?.home??0)+(m.score?.fullTime?.away??0)===0).length,'Empates 0-0')+
     pill(Object.keys(teams).length,'Equipos con actividad');
+
+  // FIFA Awards projection
+  const aw=document.getElementById('fifa-awards');
+  function acard(icon,title,player,team,stat,gold){
+    return `<div class="award-card${gold?' gold':''}"><div class="award-icon">${icon}</div><div class="award-title">${title}</div>${flag(team,20,14)}<div class="award-player">${player}</div><div class="award-team">${team}</div><div class="award-stat">${stat}</div></div>`;
+  }
+  let awH='';
+  // Golden Boot (top scorer)
+  const topScorer=_scorers.length?[..._scorers].sort((a,b)=>(b.goals||0)-(a.goals||0))[0]:null;
+  if(topScorer){
+    const tsn=mapName(topScorer.team?.name)||mapName(topScorer.team?.shortName)||'?';
+    awH+=acard('🥾','Bota de Oro',topScorer.player?.name||'?',tsn,`${topScorer.goals||0} goles`,true);
+  }
+  // Golden Glove (best GK — team with fewest GA per match, min 1 match, use clean sheets as tiebreak)
+  const gkTeams=Object.entries(teams).filter(([,t])=>t.pj>0).sort((a,b)=>(a[1].ga/a[1].pj)-(b[1].ga/b[1].pj)||b[1].cs-a[1].cs);
+  if(gkTeams.length){
+    const[gn,gt]=gkTeams[0];
+    awH+=acard('🧤','Guante de Oro','Portero de',gn,`${gt.ga} GC · ${gt.cs} valla${gt.cs!==1?'s':''} invicta${gt.cs!==1?'s':''}`,true);
+  }
+  // Top assists
+  const topAssist=_scorers.length?[..._scorers].filter(s=>(s.assists||0)>0).sort((a,b)=>(b.assists||0)-(a.assists||0))[0]:null;
+  if(topAssist){
+    const tan=mapName(topAssist.team?.name)||mapName(topAssist.team?.shortName)||'?';
+    awH+=acard('🎯','Más Asistencias',topAssist.player?.name||'?',tan,`${topAssist.assists||0} asistencias`,false);
+  }
+  // Golden Ball (best player — goals+assists composite)
+  const topBall=_scorers.length?[..._scorers].sort((a,b)=>((b.goals||0)+(b.assists||0))-((a.goals||0)+(a.assists||0))||(b.goals||0)-(a.goals||0))[0]:null;
+  if(topBall){
+    const tbn=mapName(topBall.team?.name)||mapName(topBall.team?.shortName)||'?';
+    awH+=acard('🏅','Balón de Oro',topBall.player?.name||'?',tbn,`${topBall.goals||0}G + ${topBall.assists||0}A`,true);
+  }
+  // Young Player Award (born after 2004-01-01)
+  const young=_scorers.length?[..._scorers].filter(s=>s.player?.dateOfBirth&&s.player.dateOfBirth>='2004-01-01').sort((a,b)=>((b.goals||0)+(b.assists||0))-((a.goals||0)+(a.assists||0)))[0]:null;
+  if(young){
+    const yn=mapName(young.team?.name)||mapName(young.team?.shortName)||'?';
+    const age=Math.floor((new Date()-new Date(young.player.dateOfBirth))/(365.25*86400000));
+    awH+=acard('⭐','Mejor Jugador Joven',young.player?.name||'?',yn,`${young.goals||0}G + ${young.assists||0}A · ${age} años`,false);
+  }
+  aw.innerHTML=awH||'';
 
   // Attack table
   const atk=Object.entries(teams).sort((a,b)=>b[1].gf-a[1].gf||a[1].ga-b[1].ga).slice(0,15);
