@@ -1196,10 +1196,13 @@ async function fetchTeams(){
   }catch(e){}
 }
 
-function getGKs(teamName){
+const GK_STARTER={'México':'Raúl Rangel'};
+function getGK(teamName){
+  if(GK_STARTER[teamName]) return GK_STARTER[teamName];
   const sq=_squads[teamName];
-  if(!sq) return [];
-  return sq.filter(p=>p.position==='Goalkeeper').map(p=>p.name);
+  if(!sq) return null;
+  const gk=sq.find(p=>p.position==='Goalkeeper');
+  return gk?gk.name:null;
 }
 
 async function fetchScorers(){
@@ -1294,9 +1297,8 @@ function renderStats(){
   const gkTeams=Object.entries(teams).filter(([,t])=>t.pj>0).sort((a,b)=>(a[1].ga/a[1].pj)-(b[1].ga/b[1].pj)||b[1].cs-a[1].cs);
   if(gkTeams.length){
     const[gn,gt]=gkTeams[0];
-    const gks=getGKs(gn);
-    const gkList=gks.length?'<div style="font-size:.7rem;color:var(--txt2);margin-top:3px">'+gks.join(' · ')+'</div>':'';
-    awH+=`<div class="award-card gold"><div class="award-icon">🧤</div><div class="award-title">Guante de Oro</div>${flag(gn,20,14)}<div class="award-player">Portería de ${gn}</div>${gkList}<div class="award-stat">${gt.ga} GC · ${gt.cs} valla${gt.cs!==1?'s':''} invicta${gt.cs!==1?'s':''}</div></div>`;
+    const gkName=getGK(gn);
+    awH+=acard('🧤','Guante de Oro',gkName||'Portero',gn,`${gt.ga} GC · ${gt.cs} valla${gt.cs!==1?'s':''} invicta${gt.cs!==1?'s':''}`,true);
   }
   const young=_scorers.length?[..._scorers].filter(s=>s.player?.dateOfBirth&&s.player.dateOfBirth>='2005-01-01').sort((a,b)=>((b.goals||0)+(b.assists||0))-((a.goals||0)+(a.assists||0))||(b.goals||0)-(a.goals||0))[0]:null;
   if(young){
