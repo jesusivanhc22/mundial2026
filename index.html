@@ -549,8 +549,8 @@ function processMatches(matches){
     const text  = fdText(match);
     const venue = match.venue||'';
     const hasScore = match.status==='FINISHED'||match.status==='IN_PLAY'||match.status==='PAUSED';
-    const hs = hasScore ? (match.score?.fullTime?.home??null) : null;
-    const as = hasScore ? (match.score?.fullTime?.away??null) : null;
+    const hs = hasScore ? (match.score?.fullTime?.home??match.score?.halfTime?.home??null) : null;
+    const as = hasScore ? (match.score?.fullTime?.away??match.score?.halfTime?.away??null) : null;
 
     if(match.stage==='GROUP_STAGE'){
       const m=findGM(hN,aN);
@@ -1141,8 +1141,8 @@ function renderToday(){
     const hN=mapName(m.homeTeam?.name)||mapName(m.homeTeam?.shortName)||m.homeTeam?.shortName||'?';
     const aN=mapName(m.awayTeam?.name)||mapName(m.awayTeam?.shortName)||m.awayTeam?.shortName||'?';
     const hasScore=m.status==='FINISHED'||m.status==='IN_PLAY'||m.status==='PAUSED';
-    const hs=hasScore?(m.score?.fullTime?.home??'–'):'–';
-    const as=hasScore?(m.score?.fullTime?.away??'–'):'–';
+    const hs=hasScore?(m.score?.fullTime?.home??m.score?.halfTime?.home??'–'):'–';
+    const as=hasScore?(m.score?.fullTime?.away??m.score?.halfTime?.away??'–'):'–';
 
     let statusCls='sched',statusTxt='';
     if(m.status==='IN_PLAY'){statusCls='live';statusTxt='🔴 EN VIVO'+(m.minute?' · '+m.minute+"'":'');}
@@ -1453,7 +1453,14 @@ populateSel();
 renderAll();
 fetchTeams();
 fetchAll().then(()=>fetchScorers());
-setInterval(()=>{fetchAll().then(()=>fetchScorers());}, 5*60*1000);
+let _refreshTimer=null;
+function scheduleRefresh(){
+  if(_refreshTimer) clearInterval(_refreshTimer);
+  const hasLive=_rawMatches.some(m=>m.status==='IN_PLAY'||m.status==='PAUSED');
+  const ms=hasLive?60*1000:5*60*1000;
+  _refreshTimer=setInterval(()=>{fetchAll().then(()=>{fetchScorers();scheduleRefresh();});},ms);
+}
+scheduleRefresh();
 </script>
 </body>
 </html>
