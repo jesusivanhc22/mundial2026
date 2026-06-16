@@ -1175,6 +1175,26 @@ function renderToday(){
 
 // ─── GOLEADORES & ASISTENCIAS ───────────────────────────────────────────────
 let _scorers = [];
+let _squads = {}; // teamName → [{name, position, dateOfBirth}]
+
+async function fetchTeams(){
+  try{
+    const r=await apiFetch(`${FD_BASE}/competitions/WC/teams`);
+    if(!r.ok) return;
+    const data=await r.json();
+    for(const t of (data.teams||[])){
+      const n=mapName(t.name)||mapName(t.shortName)||t.shortName;
+      if(n&&t.squad) _squads[n]=t.squad;
+    }
+  }catch(e){}
+}
+
+function getGK(teamName){
+  const sq=_squads[teamName];
+  if(!sq) return null;
+  const gk=sq.find(p=>p.position==='Goalkeeper');
+  return gk?gk.name:null;
+}
 
 async function fetchScorers(){
   try{
@@ -1255,40 +1275,36 @@ function renderStats(){
   // FIFA Awards projection
   const aw=document.getElementById('fifa-awards');
   function acard(icon,title,player,team,stat,gold){
-    return `<div class="award-card${gold?' gold':''}"><div class="award-icon">${icon}</div><div class="award-title">${title}</div>${flag(team,20,14)}<div class="award-player">${player}</div><div class="award-team">${team}</div><div class="award-stat">${stat}</div></div>`;
+    return `<div class="award-card${gold?' gold':''}"><div class="award-icon">${icon}</div><div class="award-title">${title}</div>${team&&team!=='—'?flag(team,20,14):''}<div class="award-player">${player}</div>${team&&team!=='—'?`<div class="award-team">${team}</div>`:''}${stat?`<div class="award-stat">${stat}</div>`:''}</div>`;
   }
   let awH='';
-  // Golden Boot (top scorer)
-  const topScorer=_scorers.length?[..._scorers].sort((a,b)=>(b.goals||0)-(a.goals||0))[0]:null;
-  if(topScorer){
-    const tsn=mapName(topScorer.team?.name)||mapName(topScorer.team?.shortName)||'?';
-    awH+=acard('🥾','Bota de Oro',topScorer.player?.name||'?',tsn,`${topScorer.goals||0} goles`,true);
-  }
-  // Golden Glove (best GK — team with fewest GA per match, min 1 match, use clean sheets as tiebreak)
+  const ranked=_scorers.length?[..._scorers].sort((a,b)=>((b.goals||0)+(b.assists||0))-((a.goals||0)+(a.assists||0))||(b.goals||0)-(a.goals||0)):[];
+  const sName=s=>mapName(s.team?.name)||mapName(s.team?.shortName)||'?';
+  if(ranked[0]) awH+=acard('🏅','Balón de Oro',ranked[0].player?.name||'?',sName(ranked[0]),`${ranked[0].goals||0}G + ${ranked[0].assists||0}A`,true);
+  if(ranked[1]) awH+=acard('🥈','Balón de Plata',ranked[1].player?.name||'?',sName(ranked[1]),`${ranked[1].goals||0}G + ${ranked[1].assists||0}A`,false);
+  if(ranked[2]) awH+=acard('🥉','Balón de Bronce',ranked[2].player?.name||'?',sName(ranked[2]),`${ranked[2].goals||0}G + ${ranked[2].assists||0}A`,false);
+  const topScorer=_scorers.length?[..._scorers].sort((a,b)=>(b.goals||0)-(a.goals||0)||(b.assists||0)-(a.assists||0))[0]:null;
+  if(topScorer) awH+=acard('🥾','Bota de Oro',topScorer.player?.name||'?',sName(topScorer),`${topScorer.goals||0} goles · ${topScorer.assists||0}A`,true);
   const gkTeams=Object.entries(teams).filter(([,t])=>t.pj>0).sort((a,b)=>(a[1].ga/a[1].pj)-(b[1].ga/b[1].pj)||b[1].cs-a[1].cs);
   if(gkTeams.length){
     const[gn,gt]=gkTeams[0];
-    awH+=acard('🧤','Guante de Oro','Portero de',gn,`${gt.ga} GC · ${gt.cs} valla${gt.cs!==1?'s':''} invicta${gt.cs!==1?'s':''}`,true);
+    const gkName=getGK(gn);
+    awH+=acard('🧤','Guante de Oro',gkName||'Portero',gn,`${gt.ga} GC · ${gt.cs} valla${gt.cs!==1?'s':''} invicta${gt.cs!==1?'s':''}`,true);
   }
-  // Top assists
-  const topAssist=_scorers.length?[..._scorers].filter(s=>(s.assists||0)>0).sort((a,b)=>(b.assists||0)-(a.assists||0))[0]:null;
-  if(topAssist){
-    const tan=mapName(topAssist.team?.name)||mapName(topAssist.team?.shortName)||'?';
-    awH+=acard('🎯','Más Asistencias',topAssist.player?.name||'?',tan,`${topAssist.assists||0} asistencias`,false);
-  }
-  // Golden Ball (best player — goals+assists composite)
-  const topBall=_scorers.length?[..._scorers].sort((a,b)=>((b.goals||0)+(b.assists||0))-((a.goals||0)+(a.assists||0))||(b.goals||0)-(a.goals||0))[0]:null;
-  if(topBall){
-    const tbn=mapName(topBall.team?.name)||mapName(topBall.team?.shortName)||'?';
-    awH+=acard('🏅','Balón de Oro',topBall.player?.name||'?',tbn,`${topBall.goals||0}G + ${topBall.assists||0}A`,true);
-  }
-  // Young Player Award (born after 2004-01-01)
-  const young=_scorers.length?[..._scorers].filter(s=>s.player?.dateOfBirth&&s.player.dateOfBirth>='2004-01-01').sort((a,b)=>((b.goals||0)+(b.assists||0))-((a.goals||0)+(a.assists||0)))[0]:null;
+  const young=_scorers.length?[..._scorers].filter(s=>s.player?.dateOfBirth&&s.player.dateOfBirth>='2005-01-01').sort((a,b)=>((b.goals||0)+(b.assists||0))-((a.goals||0)+(a.assists||0))||(b.goals||0)-(a.goals||0))[0]:null;
   if(young){
-    const yn=mapName(young.team?.name)||mapName(young.team?.shortName)||'?';
     const age=Math.floor((new Date()-new Date(young.player.dateOfBirth))/(365.25*86400000));
-    awH+=acard('⭐','Mejor Jugador Joven',young.player?.name||'?',yn,`${young.goals||0}G + ${young.assists||0}A · ${age} años`,false);
+    awH+=acard('⭐','Mejor Jugador Joven',young.player?.name||'?',sName(young),`${young.goals||0}G + ${young.assists||0}A · ${age} años`,false);
   }
+  const topAssist=_scorers.length?[..._scorers].filter(s=>(s.assists||0)>0).sort((a,b)=>(b.assists||0)-(a.assists||0))[0]:null;
+  if(topAssist) awH+=acard('🎯','Más Asistencias',topAssist.player?.name||'?',sName(topAssist),`${topAssist.assists||0} asistencias`,false);
+  const funTeams=Object.entries(teams).filter(([,t])=>t.pj>0).sort((a,b)=>(b[1].gf+b[1].ga)-(a[1].gf+a[1].ga)||(b[1].gf-a[1].gf));
+  if(funTeams.length){
+    const[fn,ft]=funTeams[0];
+    awH+=acard('🎭','Equipo Más Entretenido','',fn,`${ft.gf+ft.ga} goles en sus partidos (${ft.gf}GF + ${ft.ga}GC)`,false);
+  }
+  awH+=acard('🤝','Premio Fair Play','','—','Sin datos de tarjetas en API',false);
+  awH+='<div style="grid-column:1/-1;font-size:.65rem;color:var(--txt2);padding:4px 0;text-align:center">⚠ Proyección basada en datos disponibles · Gol del Torneo y 11 Ideal son elegidos por panel FIFA</div>';
   aw.innerHTML=awH||'';
 
   // Attack table
@@ -1435,6 +1451,7 @@ function populateSel(){
 
 populateSel();
 renderAll();
+fetchTeams();
 fetchAll().then(()=>fetchScorers());
 setInterval(()=>{fetchAll().then(()=>fetchScorers());}, 5*60*1000);
 </script>
