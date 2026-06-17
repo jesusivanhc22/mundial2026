@@ -1461,15 +1461,20 @@ function populateSel(){
 populateSel();
 renderAll();
 fetchTeams();
-fetchAll().then(()=>fetchScorers());
+fetchAll().then(()=>{fetchScorers();scheduleRefresh();});
 let _refreshTimer=null;
 function scheduleRefresh(){
   if(_refreshTimer) clearInterval(_refreshTimer);
+  const now=Date.now();
   const hasLive=_rawMatches.some(m=>m.status==='IN_PLAY'||m.status==='PAUSED');
-  const ms=hasLive?60*1000:5*60*1000;
+  const soonKO=_rawMatches.some(m=>{
+    if(m.status!=='TIMED'&&m.status!=='SCHEDULED') return false;
+    const diff=new Date(m.utcDate).getTime()-now;
+    return diff>0&&diff<30*60*1000;
+  });
+  const ms=hasLive?60*1000:soonKO?2*60*1000:5*60*1000;
   _refreshTimer=setInterval(()=>{fetchAll().then(()=>{fetchScorers();scheduleRefresh();});},ms);
 }
-scheduleRefresh();
 </script>
 </body>
 </html>
