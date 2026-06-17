@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>FIFA World Cup 2026</title>
 <style>
 :root{--bg:#07101f;--s1:#0e1c2f;--s2:#162538;--s3:#1d3049;--bd:#253b55;--acc:#3b82f6;--grn:#22c55e;--ylw:#eab308;--gold:#f59e0b;--red:#ef4444;--txt:#f0f4f8;--txt2:#8eaec8;--live-bg:#041a0b}
@@ -215,7 +218,8 @@ header{background:linear-gradient(135deg,#0b2040,#07101f);padding:10px 16px;bord
   <div class="hdr-r">
     <span class="dot" id="dot"></span>
     <span class="upd-txt" id="upd">Cargando…</span>
-    <button class="rbtn" id="rbtn" onclick="fetchAll()">
+    <span class="upd-txt" id="next-upd" style="font-size:.6rem;opacity:.6"></span>
+    <button class="rbtn" id="rbtn" onclick="fetchAll().then(()=>{fetchScorers();scheduleRefresh();})">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
       Actualizar
     </button>
@@ -1474,7 +1478,15 @@ function scheduleRefresh(){
   });
   const ms=hasLive?60*1000:soonKO?2*60*1000:5*60*1000;
   _refreshTimer=setInterval(()=>{fetchAll().then(()=>{fetchScorers();scheduleRefresh();});},ms);
+  let _nextAt=Date.now()+ms;
+  const nel=document.getElementById('next-upd');
+  if(_countdownTimer) clearInterval(_countdownTimer);
+  _countdownTimer=setInterval(()=>{
+    const left=Math.max(0,Math.round((_nextAt-Date.now())/1000));
+    if(nel) nel.textContent=left>0?`↻ ${left}s`:'↻ …';
+  },1000);
 }
+let _countdownTimer=null;
 </script>
 </body>
 </html>
