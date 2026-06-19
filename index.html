@@ -543,7 +543,73 @@ function fdText(match){
 
 const KO_STAGES = new Set(['ROUND_OF_32','ROUND_OF_16','QUARTER_FINALS','SEMI_FINALS','THIRD_PLACE','FINAL']);
 
-const VENUES={537327:['Estadio Azteca','CDMX'],537328:['Hard Rock Stadium','Miami'],537333:['BMO Field','Toronto'],537345:['SoFi Stadium','Los Ángeles'],537334:['Lincoln Financial Field','Philadelphia'],537339:['Lumen Field','Seattle'],537340:['NRG Stadium','Houston'],537346:['Estadio BBVA','Monterrey'],537351:['Mercedes-Benz Stadium','Atlanta'],537357:['AT&T Stadium','Dallas'],537352:['Rose Bowl','Los Ángeles'],537358:['Geodis Park','Nashville'],537369:['MetLife Stadium','New York/NJ'],537363:['Bank of America Stadium','Charlotte'],537370:['Estadio Akron','Guadalajara'],537364:['SoFi Stadium','Los Ángeles'],537391:['Hard Rock Stadium','Miami'],537392:['Lumen Field','Seattle'],537397:['Lincoln Financial Field','Philadelphia'],537398:['NRG Stadium','Houston'],537403:['AT&T Stadium','Dallas'],537409:['Estadio Azteca','CDMX'],537410:['Mercedes-Benz Stadium','Atlanta'],537404:['Rose Bowl','Los Ángeles'],537329:['Geodis Park','Nashville'],537335:['MetLife Stadium','New York/NJ'],537336:['BMO Field','Toronto'],537330:['Bank of America Stadium','Charlotte'],537348:['Estadio BBVA','Monterrey'],537342:['Estadio Akron','Guadalajara'],537341:['SoFi Stadium','Los Ángeles'],537347:['Hard Rock Stadium','Miami'],537359:['Lincoln Financial Field','Philadelphia'],537353:['Lumen Field','Seattle'],537354:['NRG Stadium','Houston'],537360:['AT&T Stadium','Dallas'],537371:['MetLife Stadium','New York/NJ'],537365:['Mercedes-Benz Stadium','Atlanta'],537372:['Rose Bowl','Los Ángeles'],537366:['Geodis Park','Nashville'],537399:['Estadio Azteca','CDMX'],537393:['BMO Field','Toronto'],537394:['Bank of America Stadium','Charlotte'],537400:['Estadio BBVA','Monterrey'],537405:['Estadio Akron','Guadalajara'],537411:['SoFi Stadium','Los Ángeles'],537412:['Hard Rock Stadium','Miami'],537406:['Lincoln Financial Field','Philadelphia'],537338:['Lumen Field','Seattle'],537337:['NRG Stadium','Houston'],537343:['AT&T Stadium','Dallas'],537344:['MetLife Stadium','New York/NJ'],537332:['Mercedes-Benz Stadium','Atlanta'],537331:['Rose Bowl','Los Ángeles'],537356:['Geodis Park','Nashville'],537355:['BMO Field','Toronto'],537362:['Bank of America Stadium','Charlotte'],537361:['Estadio BBVA','Monterrey'],537350:['Estadio Azteca','CDMX'],537349:['Estadio Akron','Guadalajara'],537396:['SoFi Stadium','Los Ángeles'],537395:['Hard Rock Stadium','Miami'],537374:['MetLife Stadium','New York/NJ'],537373:['AT&T Stadium','Dallas'],537368:['NRG Stadium','Houston'],537367:['Lincoln Financial Field','Philadelphia'],537414:['Lumen Field','Seattle'],537413:['Mercedes-Benz Stadium','Atlanta'],537408:['Rose Bowl','Los Ángeles'],537407:['Geodis Park','Nashville'],537402:['Bank of America Stadium','Charlotte'],537401:['BMO Field','Toronto'],537417:['MetLife Stadium','New York/NJ'],537423:['SoFi Stadium','Los Ángeles'],537415:['AT&T Stadium','Dallas'],537418:['Hard Rock Stadium','Miami'],537424:['Rose Bowl','Los Ángeles'],537416:['NRG Stadium','Houston'],537425:['Mercedes-Benz Stadium','Atlanta'],537426:['Lumen Field','Seattle'],537422:['Lincoln Financial Field','Philadelphia'],537421:['Geodis Park','Nashville'],537420:['Bank of America Stadium','Charlotte'],537419:['BMO Field','Toronto'],537429:['Estadio BBVA','Monterrey'],537428:['Estadio Akron','Guadalajara'],537427:['Estadio Azteca','CDMX'],537430:['SoFi Stadium','Los Ángeles'],537376:['MetLife Stadium','New York/NJ'],537375:['AT&T Stadium','Dallas'],537377:['Hard Rock Stadium','Miami'],537378:['NRG Stadium','Houston'],537379:['SoFi Stadium','Los Ángeles'],537380:['Rose Bowl','Los Ángeles'],537381:['Lumen Field','Seattle'],537382:['Lincoln Financial Field','Philadelphia'],537383:['NRG Stadium','Houston'],537384:['SoFi Stadium','Los Ángeles'],537385:['MetLife Stadium','New York/NJ'],537386:['AT&T Stadium','Dallas'],537387:['AT&T Stadium','Dallas'],537388:['MetLife Stadium','New York/NJ'],537389:['Hard Rock Stadium','Miami'],537390:['MetLife Stadium','New York/NJ']};
+const VENUES={
+  // Grupo A
+  537327:['Estadio Azteca','CDMX'],537328:['Estadio Akron','Guadalajara'],
+  537329:['Mercedes-Benz Stadium','Atlanta'],537330:['Estadio Akron','Guadalajara'],
+  537331:['Estadio Azteca','CDMX'],537332:['Estadio BBVA','Monterrey'],
+  // Grupo B
+  537333:['BMO Field','Toronto'],537334:["Levi's Stadium",'San Francisco'],
+  537335:['SoFi Stadium','Los Ángeles'],537336:['BC Place','Vancouver'],
+  537337:['BC Place','Vancouver'],537338:['Lumen Field','Seattle'],
+  // Grupo C
+  537339:['MetLife Stadium','New York/NJ'],537340:['Gillette Stadium','Boston'],
+  537341:['Lincoln Financial Field','Philadelphia'],537342:['Gillette Stadium','Boston'],
+  537343:['Hard Rock Stadium','Miami'],537344:['Mercedes-Benz Stadium','Atlanta'],
+  // Grupo D
+  537345:['SoFi Stadium','Los Ángeles'],537346:['BC Place','Vancouver'],
+  537347:["Levi's Stadium",'San Francisco'],537348:['Lumen Field','Seattle'],
+  537349:['SoFi Stadium','Los Ángeles'],537350:["Levi's Stadium",'San Francisco'],
+  // Grupo E
+  537351:['NRG Stadium','Houston'],537352:['Lincoln Financial Field','Philadelphia'],
+  537353:['BMO Field','Toronto'],537354:['Arrowhead Stadium','Kansas City'],
+  537355:['MetLife Stadium','New York/NJ'],537356:['Lincoln Financial Field','Philadelphia'],
+  // Grupo F
+  537357:['AT&T Stadium','Dallas'],537358:['Estadio BBVA','Monterrey'],
+  537359:['NRG Stadium','Houston'],537360:['Estadio BBVA','Monterrey'],
+  537361:['Arrowhead Stadium','Kansas City'],537362:['AT&T Stadium','Dallas'],
+  // Grupo G
+  537363:['Lumen Field','Seattle'],537364:['SoFi Stadium','Los Ángeles'],
+  537365:['SoFi Stadium','Los Ángeles'],537366:['BC Place','Vancouver'],
+  537367:['BC Place','Vancouver'],537368:['Lumen Field','Seattle'],
+  // Grupo H
+  537369:['Mercedes-Benz Stadium','Atlanta'],537370:['Hard Rock Stadium','Miami'],
+  537371:['Mercedes-Benz Stadium','Atlanta'],537372:['Hard Rock Stadium','Miami'],
+  537373:['Estadio Akron','Guadalajara'],537374:['NRG Stadium','Houston'],
+  // Grupo I
+  537391:['MetLife Stadium','New York/NJ'],537392:['Gillette Stadium','Boston'],
+  537393:['Lincoln Financial Field','Philadelphia'],537394:['MetLife Stadium','New York/NJ'],
+  537395:['Gillette Stadium','Boston'],537396:['BMO Field','Toronto'],
+  // Grupo J
+  537397:['Arrowhead Stadium','Kansas City'],537398:["Levi's Stadium",'San Francisco'],
+  537399:['AT&T Stadium','Dallas'],537400:["Levi's Stadium",'San Francisco'],
+  537401:['AT&T Stadium','Dallas'],537402:['Arrowhead Stadium','Kansas City'],
+  // Grupo K
+  537403:['NRG Stadium','Houston'],537404:['Estadio Azteca','CDMX'],
+  537405:['NRG Stadium','Houston'],537406:['Estadio Akron','Guadalajara'],
+  537407:['Hard Rock Stadium','Miami'],537408:['Mercedes-Benz Stadium','Atlanta'],
+  // Grupo L
+  537409:['AT&T Stadium','Dallas'],537410:['BMO Field','Toronto'],
+  537411:['Gillette Stadium','Boston'],537412:['BMO Field','Toronto'],
+  537413:['MetLife Stadium','New York/NJ'],537414:['Lincoln Financial Field','Philadelphia'],
+  // Eliminatorias (R32 → Final)
+  537417:['MetLife Stadium','New York/NJ'],537423:['SoFi Stadium','Los Ángeles'],
+  537415:['AT&T Stadium','Dallas'],537418:['Hard Rock Stadium','Miami'],
+  537424:['Rose Bowl','Los Ángeles'],537416:['NRG Stadium','Houston'],
+  537425:['Mercedes-Benz Stadium','Atlanta'],537426:['Lumen Field','Seattle'],
+  537422:['Lincoln Financial Field','Philadelphia'],537421:['Geodis Park','Nashville'],
+  537420:['Bank of America Stadium','Charlotte'],537419:['BMO Field','Toronto'],
+  537429:['Estadio BBVA','Monterrey'],537428:['Estadio Akron','Guadalajara'],
+  537427:['Estadio Azteca','CDMX'],537430:['SoFi Stadium','Los Ángeles'],
+  537376:['MetLife Stadium','New York/NJ'],537375:['AT&T Stadium','Dallas'],
+  537377:['Hard Rock Stadium','Miami'],537378:['NRG Stadium','Houston'],
+  537379:['SoFi Stadium','Los Ángeles'],537380:['Rose Bowl','Los Ángeles'],
+  537381:['Lumen Field','Seattle'],537382:['Lincoln Financial Field','Philadelphia'],
+  537383:['NRG Stadium','Houston'],537384:['SoFi Stadium','Los Ángeles'],
+  537385:['MetLife Stadium','New York/NJ'],537386:['AT&T Stadium','Dallas'],
+  537387:['AT&T Stadium','Dallas'],537388:['MetLife Stadium','New York/NJ'],
+  537389:['Hard Rock Stadium','Miami'],537390:['MetLife Stadium','New York/NJ']
+};
 
 function processMatches(matches){
   for(const match of matches){
