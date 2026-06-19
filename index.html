@@ -604,25 +604,72 @@ function findKOMId(hN,aN){
   return null;
 }
 
-// ─── STANDINGS ───────────────────────────────────────────────────────────────
+// ─── STANDINGS (FIFA Art.13 tiebreakers) ─────────────────────────────────────
 function calcStandings(g){
   const ts=GRP[g].t;
   const s=ts.map((t,i)=>({t,i,pld:0,w:0,d:0,l:0,gf:0,ga:0,gd:0,pts:0}));
+  // record each played result for H2H lookup: results[hi][ai]={h,a}
+  const results=[[],[],[],[]].map(()=>[null,null,null,null]);
   GM.forEach((m,idx)=>{
     const d=GS[g+'_'+idx];
     if(!d||d.h===undefined||d.a===undefined) return;
     const h=+d.h,a=+d.a;
     if(isNaN(h)||isNaN(a)) return;
-    s[m[0]].pld++;s[m[1]].pld++;
-    s[m[0]].gf+=h;s[m[0]].ga+=a;
-    s[m[1]].gf+=a;s[m[1]].ga+=h;
-    if(h>a){s[m[0]].w++;s[m[0]].pts+=3;s[m[1]].l++;}
-    else if(h<a){s[m[1]].w++;s[m[1]].pts+=3;s[m[0]].l++;}
-    else{s[m[0]].d++;s[m[1]].d++;s[m[0]].pts++;s[m[1]].pts++;}
+    const [hi,ai]=m;
+    results[hi][ai]={h,a}; results[ai][hi]={h:a,a:h};
+    s[hi].pld++;s[ai].pld++;
+    s[hi].gf+=h;s[hi].ga+=a;
+    s[ai].gf+=a;s[ai].ga+=h;
+    if(h>a){s[hi].w++;s[hi].pts+=3;s[ai].l++;}
+    else if(h<a){s[ai].w++;s[ai].pts+=3;s[hi].l++;}
+    else{s[hi].d++;s[ai].d++;s[hi].pts++;s[ai].pts++;}
   });
   s.forEach(x=>x.gd=x.gf-x.ga);
-  s.sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf||a.i-b.i);
-  return s;
+
+  // H2H stats among a subset of team indices
+  function h2h(idxs){
+    const r={}; idxs.forEach(i=>{r[i]={pts:0,gd:0,gf:0};});
+    idxs.forEach(i=>idxs.forEach(j=>{
+      if(i===j) return;
+      const res=results[i][j];
+      if(!res) return;
+      r[i].gf+=res.h; r[i].gd+=(res.h-res.a);
+      if(res.h>res.a) r[i].pts+=3;
+      else if(res.h===res.a) r[i].pts+=1;
+    }));
+    return r;
+  }
+
+  // FIFA Art.13 sort: apply to a group of team objects
+  function fifaSort(group){
+    if(group.length<=1) return group;
+    // Step 1: H2H among tied teams (a,b,c)
+    const idxs=group.map(x=>x.i);
+    const hh=h2h(idxs);
+    group.sort((a,b)=>{
+      const ha=hh[a.i],hb=hh[b.i];
+      return (hb.pts-ha.pts)||(hb.gd-ha.gd)||(hb.gf-ha.gf)||
+      // Step 2d,e: overall GD/GF
+      (b.gd-a.gd)||(b.gf-a.gf)||
+      // preserve original seed order as final fallback
+      (a.i-b.i);
+    });
+    return group;
+  }
+
+  // Sort by points, then resolve ties via FIFA criteria
+  s.sort((a,b)=>b.pts-a.pts);
+  // Group consecutive equal-points teams and re-sort each cluster
+  const sorted=[];
+  let i=0;
+  while(i<s.length){
+    let j=i;
+    while(j<s.length&&s[j].pts===s[i].pts) j++;
+    const cluster=s.slice(i,j);
+    fifaSort(cluster).forEach(t=>sorted.push(t));
+    i=j;
+  }
+  return sorted;
 }
 
 function allThirds(){
