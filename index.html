@@ -1513,9 +1513,15 @@ function exactGroupCertainties(g){
   }
 
   return ts.map((_,i)=>({
-    guaranteed1: posSet[i].size===1&&posSet[i].has(0),
+    guaranteed1:    posSet[i].size===1 && posSet[i].has(0),
     guaranteedTop2: [...posSet[i]].every(p=>p<=1),
-    eliminated: [...posSet[i]].every(p=>p>=2)
+    // neverTop2: always 3rd or 4th — but may still advance as best 3rd
+    neverTop2:      [...posSet[i]].every(p=>p>=2),
+    // truly eliminated: always 4th — can't even be 3rd (best 3rd route closed)
+    eliminated:     [...posSet[i]].every(p=>p===3),
+    canBe1st:       posSet[i].has(0),
+    canBe2nd:       posSet[i].has(1),
+    canBe3rd:       posSet[i].has(2)
   }));
 }
 
@@ -1582,12 +1588,19 @@ function simGroup(g,runs=10000){
     if(c.guaranteedTop2){const f=Math.min(Math.round(counts[i].first/runs*100),99);
       return {t,first:f,second:100-f,third:0,elim:0,advance:100,certain:c};}
     if(c.eliminated)    return {t,first:0,second:0,third:0,elim:100,advance:0,certain:c};
-    return {t,
-      first:Math.round(counts[i].first/runs*100),
-      second:Math.round(counts[i].second/runs*100),
+    // neverTop2: can't finish 1st or 2nd in group, but may advance as best 3rd
+    if(c.neverTop2)     return {t,
+      first:0, second:0,
       third:Math.round(counts[i].third/runs*100),
       elim:Math.round(counts[i].elim/runs*100),
-      advance:Math.round((counts[i].first+counts[i].second+counts[i].third)/runs*100),
+      advance:Math.round(counts[i].third/runs*100),
+      certain:c};
+    return {t,
+      first:!c.canBe1st?0:Math.round(counts[i].first/runs*100),
+      second:!c.canBe2nd?0:Math.round(counts[i].second/runs*100),
+      third:Math.round(counts[i].third/runs*100),
+      elim:Math.round(counts[i].elim/runs*100),
+      advance:Math.round(((!c.canBe1st?0:counts[i].first)+(!c.canBe2nd?0:counts[i].second)+counts[i].third)/runs*100),
       certain:c
     };
   });
@@ -1629,14 +1642,16 @@ function renderPredictions(){
 <div class="pred-pct" style="color:var(--grn)">100%</div>
 </div>`;
       } else {
+        const c=p.certain;
         const advColor=p.advance>=75?'var(--grn)':p.advance>=40?'var(--ylw)':'var(--red)';
+        const b1=c.canBe1st?`<div class="pred-bar b1" style="width:${scale(p.first)}px" title="1°: ${p.first}%"></div>`:'';
+        const b2=c.canBe2nd?`<div class="pred-bar b2" style="width:${scale(p.second)}px" title="2°: ${p.second}%"></div>`:'';
+        const label=c.neverTop2?`<span style="font-size:.65rem;color:var(--txt2);margin-left:4px">solo 3° mejor</span>`:'';
         html+=`<div class="pred-row">
 <div class="pred-team">${flag(p.t,17,12)} ${p.t}</div>
 <div class="pred-bars">
-  <div class="pred-bar b1" style="width:${scale(p.first)}px" title="1°: ${p.first}%"></div>
-  <div class="pred-bar b2" style="width:${scale(p.second)}px" title="2°: ${p.second}%"></div>
-  <div class="pred-bar b3" style="width:${scale(p.third)}px" title="3°*: ${p.third}%"></div>
-  <div class="pred-bar belim" style="width:${scale(p.elim)}px" title="Elim: ${p.elim}%"></div>
+  ${b1}${b2}<div class="pred-bar b3" style="width:${scale(p.third)}px" title="3°*: ${p.third}%"></div>
+  <div class="pred-bar belim" style="width:${scale(p.elim)}px" title="Elim: ${p.elim}%"></div>${label}
 </div>
 <div class="pred-pct" style="color:${advColor}">${p.advance}%</div>
 </div>`;
