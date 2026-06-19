@@ -1471,22 +1471,58 @@ function renderStats(){
 function simGroup(g,runs=10000){
   const ts=GRP[g].t;
   const played=new Set();
-  const base=ts.map(()=>({pts:0,gd:0,gf:0}));
 
-  GM.forEach((m,idx)=>{
+  GM.forEach((_,idx)=>{
     const d=GS[g+'_'+idx];
-    if(d&&d.h!==undefined&&d.a!==undefined){
-      played.add(idx);
-      const h=+d.h,a=+d.a;
-      base[m[0]].gf+=h;base[m[0]].gd+=(h-a);
-      base[m[1]].gf+=a;base[m[1]].gd+=(a-h);
-      if(h>a){base[m[0]].pts+=3;}
-      else if(h<a){base[m[1]].pts+=3;}
-      else{base[m[0]].pts++;base[m[1]].pts++;}
-    }
+    if(d&&d.h!==undefined&&d.a!==undefined) played.add(idx);
   });
 
   const remaining=GM.map((_,i)=>i).filter(i=>!played.has(i));
+
+  // If all matches played, use actual standings directly — no simulation needed
+  if(remaining.length===0){
+    const s=calcStandings(g);
+    return s.map((row,pos)=>({
+      t:row.t,
+      first:pos===0?100:0,
+      second:pos===1?100:0,
+      third:pos===2?100:0,
+      elim:pos===3?100:0,
+      advance:pos<=2?100:0
+    }));
+  }
+
+  // Check per-team clinched positions from actual standings
+  const actual=calcStandings(g);
+  // A team is clinched 1st if getClinched says so AND it's currently 1st
+  const clinched1=actual[0].pld>0&&_clinched.has(actual[0].t)&&
+    actual[0].pts>actual[1].pts+(3*Math.min(3-actual[1].pld,remaining.filter(i=>GM[i].includes(actual[1].i)).length));
+  // A team is eliminated if it mathematically can't reach top-2
+  function maxPossiblePts(ti){
+    const cur=actual.find(x=>x.i===ti);
+    const gamesLeft=remaining.filter(i=>GM[i][0]===ti||GM[i][1]===ti).length;
+    return cur.pts+gamesLeft*3;
+  }
+  const eliminated=new Set();
+  actual.forEach((t,pos)=>{
+    if(pos<2) return;
+    const mp=maxPossiblePts(t.i);
+    // eliminated if can't beat both teams above even in best case
+    if(mp<actual[1].pts) eliminated.add(t.i);
+  });
+
+  const base=ts.map(()=>({pts:0,gd:0,gf:0}));
+  GM.forEach((m,idx)=>{
+    if(!played.has(idx)) return;
+    const d=GS[g+'_'+idx];
+    const h=+d.h,a=+d.a;
+    base[m[0]].gf+=h;base[m[0]].gd+=(h-a);
+    base[m[1]].gf+=a;base[m[1]].gd+=(a-h);
+    if(h>a) base[m[0]].pts+=3;
+    else if(h<a) base[m[1]].pts+=3;
+    else{base[m[0]].pts++;base[m[1]].pts++;}
+  });
+
   const counts=ts.map(()=>({first:0,second:0,third:0,elim:0}));
 
   for(let r=0;r<runs;r++){
@@ -1508,14 +1544,33 @@ function simGroup(g,runs=10000){
     counts[ranked[3].i].elim++;
   }
 
-  return ts.map((t,i)=>({
+  // Override simulation with known certainties
+  const result=ts.map((t,i)=>({
     t,
     first:Math.round(counts[i].first/runs*100),
     second:Math.round(counts[i].second/runs*100),
     third:Math.round(counts[i].third/runs*100),
     elim:Math.round(counts[i].elim/runs*100),
     advance:Math.round((counts[i].first+counts[i].second+counts[i].third)/runs*100)
-  })).sort((a,b)=>b.advance-a.advance);
+  }));
+
+  // Apply hard overrides for clinched/eliminated teams
+  result.forEach(p=>{
+    const idx=ts.indexOf(p.t);
+    const actPos=actual.findIndex(x=>x.t===p.t);
+    if(actPos===0&&_clinched.has(p.t)){
+      // Clinched 1st: 100% first, 0% everything else
+      p.first=100;p.second=0;p.third=0;p.elim=0;p.advance=100;
+    } else if(actPos===1&&_clinched.has(p.t)){
+      // Clinched top-2 but not necessarily 1st
+      p.advance=100;p.elim=0;p.third=0;
+      p.first=Math.min(p.first,99);p.second=100-p.first;
+    } else if(eliminated.has(idx)){
+      p.first=0;p.second=0;p.third=0;p.elim=100;p.advance=0;
+    }
+  });
+
+  return result.sort((a,b)=>b.advance-a.advance);
 }
 
 function renderPredictions(){
