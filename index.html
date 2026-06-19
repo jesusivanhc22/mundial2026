@@ -712,9 +712,20 @@ function getClinched(g){
 
 // Global clinched set built after standings computed
 let _clinched=new Set();
+let _clinched1=new Set(); // guaranteed 1st in group
+let _clinched2=new Set(); // guaranteed 2nd in group
 function buildClinched(){
   _clinched=new Set();
-  for(const g of 'ABCDEFGHIJKL') getClinched(g).forEach(t=>_clinched.add(t));
+  _clinched1=new Set();
+  _clinched2=new Set();
+  for(const g of 'ABCDEFGHIJKL'){
+    getClinched(g).forEach(t=>_clinched.add(t));
+    const cert=exactGroupCertainties(g);
+    GRP[g].t.forEach((t,i)=>{
+      if(cert[i].guaranteed1) _clinched1.add(t);
+      if(cert[i].guaranteed2) _clinched2.add(t);
+    });
+  }
 }
 
 function allThirds(){
@@ -987,7 +998,8 @@ ${hasScore?`<span class="bk-ms">${sc}</span>`:''}
   }
 
   const fUrl=flagUrl(name,32);
-  const clinchBadge=_clinched.has(name)?'<span title="Clasificado" style="font-size:.65rem;margin-left:2px">✅</span>':'';
+  const slotLocked=(ref.startsWith('1_')&&_clinched1.has(name))||(ref.startsWith('2_')&&_clinched2.has(name));
+  const clinchBadge=slotLocked?'<span title="Clasificado — posición fija" style="font-size:.65rem;margin-left:2px">✅</span>':'';
   return `<div class="bk-mt${win?' win':''}">
 ${fUrl?`<img class="bk-mf" src="${fUrl}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt=""><div class="bk-mf-placeholder" style="display:none">?</div>`:`<div class="bk-mf-placeholder">?</div>`}
 <span class="bk-mn">${name}${clinchBadge}</span>
@@ -1514,6 +1526,7 @@ function exactGroupCertainties(g){
 
   return ts.map((_,i)=>({
     guaranteed1:    posSet[i].size===1 && posSet[i].has(0),
+    guaranteed2:    posSet[i].size===1 && posSet[i].has(1),
     guaranteedTop2: [...posSet[i]].every(p=>p<=1),
     // neverTop2: always 3rd or 4th — but may still advance as best 3rd
     neverTop2:      [...posSet[i]].every(p=>p>=2),
