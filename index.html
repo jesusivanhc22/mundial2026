@@ -640,33 +640,46 @@ function calcStandings(g){
     return r;
   }
 
-  // FIFA Art.13 sort: apply to a group of team objects
+  // FIFA Art.13: rank a cluster of equal-points teams step by step
   function fifaSort(group){
     if(group.length<=1) return group;
-    // Step 1: H2H among tied teams (a,b,c)
-    const idxs=group.map(x=>x.i);
-    const hh=h2h(idxs);
-    group.sort((a,b)=>{
-      const ha=hh[a.i],hb=hh[b.i];
-      return (hb.pts-ha.pts)||(hb.gd-ha.gd)||(hb.gf-ha.gf)||
-      // Step 2d,e: overall GD/GF
-      (b.gd-a.gd)||(b.gf-a.gf)||
-      // preserve original seed order as final fallback
-      (a.i-b.i);
-    });
-    return group;
+    const out=[];
+    let remaining=[...group];
+    // Iteratively peel off teams that separate via H2H, then fall through to overall
+    while(remaining.length>0){
+      if(remaining.length===1){out.push(remaining[0]);break;}
+      const idxs=remaining.map(x=>x.i);
+      const hh=h2h(idxs);
+      // Score each team by [h2h_pts, h2h_gd, h2h_gf, overall_gd, overall_gf, seed]
+      const scored=remaining.map(t=>({
+        t, v:[hh[t.i].pts,hh[t.i].gd,hh[t.i].gf,t.gd,t.gf,-t.i]
+      }));
+      scored.sort((a,b)=>{
+        for(let k=0;k<a.v.length;k++) if(b.v[k]!==a.v[k]) return b.v[k]-a.v[k];
+        return 0;
+      });
+      // Peel off top team(s) that are clearly ahead on at least one criterion
+      const top=scored[0].v;
+      const tied=scored.filter(x=>x.v.every((v,k)=>v===top[k]));
+      // If all are still tied on every criterion, push all and done
+      if(tied.length===remaining.length){
+        scored.forEach(x=>out.push(x.t)); break;
+      }
+      // Push the ones that are strictly ahead
+      scored.filter(x=>!tied.includes(x)).forEach(x=>out.push(x.t));
+      remaining=tied.map(x=>x.t);
+    }
+    return out;
   }
 
-  // Sort by points, then resolve ties via FIFA criteria
+  // Sort by points first, then resolve ties via FIFA criteria
   s.sort((a,b)=>b.pts-a.pts);
-  // Group consecutive equal-points teams and re-sort each cluster
   const sorted=[];
   let i=0;
   while(i<s.length){
     let j=i;
     while(j<s.length&&s[j].pts===s[i].pts) j++;
-    const cluster=s.slice(i,j);
-    fifaSort(cluster).forEach(t=>sorted.push(t));
+    fifaSort(s.slice(i,j)).forEach(t=>sorted.push(t));
     i=j;
   }
   return sorted;
