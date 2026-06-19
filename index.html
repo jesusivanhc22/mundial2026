@@ -672,6 +672,38 @@ function calcStandings(g){
   return sorted;
 }
 
+// Returns Set of team names that have mathematically clinched top-2 in their group
+function getClinched(g){
+  const s=calcStandings(g);
+  const totalMatches=6; // 4 teams, C(4,2)=6 matches per group
+  const played=s.reduce((acc,t)=>acc+t.pld,0)/2;
+  const remaining=totalMatches-played;
+  const clinched=new Set();
+  // A team is clinched if even if every team below wins all remaining games,
+  // it cannot be caught: team's pts > max possible pts of 3rd place team
+  for(let rank=0;rank<2;rank++){
+    const team=s[rank];
+    // max pts any lower-ranked team could reach
+    let maxBelow=0;
+    for(let r=rank+1;r<s.length;r++){
+      const t=s[r];
+      const gamesLeft=3-t.pld; // max 3 group games
+      maxBelow=Math.max(maxBelow,t.pts+gamesLeft*3);
+    }
+    if(team.pts>maxBelow) clinched.add(team.t);
+  }
+  // Also: if all 6 matches played, top 2 are always clinched
+  if(remaining===0){clinched.add(s[0].t);clinched.add(s[1].t);}
+  return clinched;
+}
+
+// Global clinched set built after standings computed
+let _clinched=new Set();
+function buildClinched(){
+  _clinched=new Set();
+  for(const g of 'ABCDEFGHIJKL') getClinched(g).forEach(t=>_clinched.add(t));
+}
+
 function allThirds(){
   return 'ABCDEFGHIJKL'.split('').map(g=>{
     const s=calcStandings(g); return {g,st:s[2]};
@@ -818,8 +850,9 @@ function renderSnap(){
       const isAdv3=i===2&&b8.includes(g)&&row.pld>0;
       const isElim=(i===3)||(i===2&&!b8.includes(g)&&row.pld>0);
       const cls=isAdv1?'adv1':isAdv2?'adv2':isAdv3?'adv3':isElim?'elim':'';
-      const badge=isAdv1?'<span class="badge b-1">1° ✓</span>':
-                  isAdv2?'<span class="badge b-2">2° ✓</span>':
+      const clinched=_clinched.has(row.t);
+      const badge=isAdv1?`<span class="badge b-1">1°${clinched?' ✅':' ✓'}</span>`:
+                  isAdv2?`<span class="badge b-2">2°${clinched?' ✅':' ✓'}</span>`:
                   isAdv3?'<span class="badge b-3">3°*</span>':'';
       const stat=row.pld>0?`${row.w}G ${row.d}E ${row.l}P · DG${row.gd>=0?'+':''}${row.gd}`:'Sin partidos';
       html+=`<div class="snap-team ${cls}">
@@ -862,7 +895,8 @@ function renderGroupCard(g){
 <table class="stbl"><thead><tr><th>#</th><th>Equipo</th><th>J</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GA</th><th>DG</th><th>Pts</th></tr></thead><tbody>`;
   s.forEach((r,i)=>{
     const hstar=host===r.t?'<span style="color:var(--gold);font-size:.62rem;margin-left:2px">★</span>':'';
-    h+=`<tr class="${clsMap[i]}"><td>${i+1}</td><td><div class="tc"><img src="${flagUrl(r.t,20)}" width="20" height="14" style="border-radius:2px;object-fit:cover" onerror="this.style.display='none'"><span>${r.t}${hstar}</span></div></td><td>${r.pld}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td><td>${r.gf}</td><td>${r.ga}</td><td>${r.gd>=0?'+'+r.gd:r.gd}</td><td><strong>${r.pts}</strong></td></tr>`;
+    const clinchMark=_clinched.has(r.t)?'<span title="Clasificado" style="font-size:.65rem;margin-left:3px">✅</span>':'';
+    h+=`<tr class="${clsMap[i]}"><td>${i+1}</td><td><div class="tc"><img src="${flagUrl(r.t,20)}" width="20" height="14" style="border-radius:2px;object-fit:cover" onerror="this.style.display='none'"><span>${r.t}${hstar}${clinchMark}</span></div></td><td>${r.pld}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td><td>${r.gf}</td><td>${r.ga}</td><td>${r.gd>=0?'+'+r.gd:r.gd}</td><td><strong>${r.pts}</strong></td></tr>`;
   });
   h+=`</tbody></table>
 <div class="mtog" onclick="tgl('ml-${g}','ti-${g}')"><span>Partidos · Grupo ${g}</span><span id="ti-${g}">▶</span></div>
@@ -940,9 +974,10 @@ ${hasScore?`<span class="bk-ms">${sc}</span>`:''}
   }
 
   const fUrl=flagUrl(name,32);
+  const clinchBadge=_clinched.has(name)?'<span title="Clasificado" style="font-size:.65rem;margin-left:2px">✅</span>':'';
   return `<div class="bk-mt${win?' win':''}">
 ${fUrl?`<img class="bk-mf" src="${fUrl}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt=""><div class="bk-mf-placeholder" style="display:none">?</div>`:`<div class="bk-mf-placeholder">?</div>`}
-<span class="bk-mn">${name}</span>
+<span class="bk-mn">${name}${clinchBadge}</span>
 <span class="bk-mp">${lbl}</span>
 ${hasScore?`<span class="bk-ms">${sc}</span>`:''}
 </div>`;
@@ -1136,6 +1171,7 @@ function getPoss(ref){
 
 // ─── RENDER ALL ──────────────────────────────────────────────────────────────
 function renderAll(){
+  buildClinched();
   _provisionalThirds=computeProvisionalThirds();
   renderToday();
   renderSnap();
