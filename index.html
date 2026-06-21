@@ -731,9 +731,9 @@ function calcStandings(g){
       if(tied.length===remaining.length){
         scored.forEach(x=>out.push(x.t)); break;
       }
-      // Push the ones that are strictly ahead
-      scored.filter(x=>!tied.includes(x)).forEach(x=>out.push(x.t));
-      remaining=tied.map(x=>x.t);
+      // Push the top group first, then continue sorting the lower teams
+      tied.forEach(x=>out.push(x.t));
+      remaining=scored.filter(x=>!tied.includes(x)).map(x=>x.t);
     }
     return out;
   }
