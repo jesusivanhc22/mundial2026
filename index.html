@@ -510,6 +510,7 @@ async function fetchAll(){
     if(!r.ok) throw new Error(`HTTP ${r.status} — ${r.statusText}`);
     const data = await r.json();
     apiMatches = 0;
+    GS = {}; KO = {};
     _rawMatches = data.matches||[];
     processMatches(_rawMatches);
     const t=new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
