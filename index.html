@@ -840,9 +840,9 @@ function buildClinched(){
   _clinched1=new Set();
   _clinched2=new Set();
   for(const g of 'ABCDEFGHIJKL'){
-    getClinched(g).forEach(t=>_clinched.add(t));
     const cert=exactGroupCertainties(g);
     GRP[g].t.forEach((t,i)=>{
+      if(cert[i].guaranteedTop2) _clinched.add(t);
       if(cert[i].guaranteed1) _clinched1.add(t);
       if(cert[i].guaranteed2) _clinched2.add(t);
     });
