@@ -1131,7 +1131,7 @@ function bkCard(mId){
   const venue=d.venue||meta.venue||'';
   const city=d.city||meta.city||'';
   const date=meta.date||'';
-  const venueLine=venue?`<div style="font-size:.6rem;color:var(--txt2);padding:2px 6px 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">📍 ${venue}${city?', '+city:''} · ${date}</div>`:'';
+  const venueLine=(city||venue)?`<div style="font-size:.6rem;color:var(--txt2);padding:2px 6px 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">📍 ${city||venue}${date?' · '+date:''}</div>`:'';
   return `<div class="bk-m" id="bk-${mId}">
 <div class="bk-mh"><span>${mId}</span>${badge}</div>
 ${bkTeamRow(m.home,mId,true)}
