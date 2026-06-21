@@ -1941,30 +1941,49 @@ function simBracket(runs=3000){
   return{opps,mexFirst:Math.round(mexFirst/runs*100),mexSecond:Math.round(mexSecond/runs*100)};
 }
 
+let _bkSimCache=null, _bkSimKey='';
+function bkSimKey(){
+  let k='';
+  for(const g of 'ABCDEFGHIJKL'){
+    GM.forEach((_,i)=>{const d=GS[g+'_'+i];if(d&&d.h!==undefined)k+=g+i+d.h+'-'+d.a+';';});
+  }
+  return k;
+}
+
 function renderMexicoR32(){
   const el=document.getElementById('mex-r32-card');
   if(!el)return;
+  const key=bkSimKey();
+  if(_bkSimCache&&key===_bkSimKey){
+    _renderMexicoR32Inner(el,_bkSimCache);
+    return;
+  }
   setTimeout(()=>{
-    const{opps,mexFirst,mexSecond}=simBracket(3000);
-    const top=opps.filter(x=>x.pct>0).slice(0,10);
-    const maxPct=top[0]?.pct||1;
-    const mexLocked=_clinched1.has('México');
-    const subline=mexLocked
-      ? `<span style="color:var(--grn);font-weight:700">✅ México clasificó 1° Gr.A</span> <span style="opacity:.7">— rival del pool CEFHI</span>`
-      : `México 1° del Gr.A: <b>${mexFirst}%</b> &nbsp;·&nbsp; México 2° del Gr.A: <b>${mexSecond}%</b><span style="margin-left:6px;opacity:.7">(si 1°: rival CEFHI · si 2°: 2° Gr.B)</span>`;
-    let html=`<div style="padding:10px 14px">
+    const result=simBracket(3000);
+    _bkSimCache=result; _bkSimKey=key;
+    _renderMexicoR32Inner(el,result);
+  },10);
+}
+
+function _renderMexicoR32Inner(el,{opps,mexFirst,mexSecond}){
+  const top=opps.filter(x=>x.pct>0).slice(0,10);
+  const maxPct=top[0]?.pct||1;
+  const mexLocked=_clinched1.has('México');
+  const subline=mexLocked
+    ? `<span style="color:var(--grn);font-weight:700">✅ México clasificó 1° Gr.A</span> <span style="opacity:.7">— rival del pool CEFHI</span>`
+    : `México 1° del Gr.A: <b>${mexFirst}%</b> &nbsp;·&nbsp; México 2° del Gr.A: <b>${mexSecond}%</b><span style="margin-left:6px;opacity:.7">(si 1°: rival CEFHI · si 2°: 2° Gr.B)</span>`;
+  let html=`<div style="padding:10px 14px">
 <div style="font-size:.68rem;color:var(--txt2);margin-bottom:8px">${subline}</div>`;
-    for(const{t,pct}of top){
-      const w=Math.max(Math.round(pct/maxPct*150),3);
-      html+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+  for(const{t,pct}of top){
+    const w=Math.max(Math.round(pct/maxPct*150),3);
+    html+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
 <div style="width:130px;font-size:.74rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${flag(t,16,11)} ${t}</div>
 <div style="background:var(--acc);height:12px;border-radius:3px;width:${w}px"></div>
 <span style="font-size:.72rem;min-width:30px;color:var(--txt)">${pct}%</span>
 </div>`;
-    }
-    html+=`</div>`;
-    el.innerHTML=html;
-  },10);
+  }
+  html+=`</div>`;
+  el.innerHTML=html;
 }
 
 function renderPredictions(){
