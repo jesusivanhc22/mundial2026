@@ -502,9 +502,10 @@ const FD_BASE  = 'https://api.football-data.org/v4';
 function proxied(url){ return 'https://corsproxy.io/?' + encodeURIComponent(url); }
 
 async function apiFetch(url){
-  const hdrs={headers:{'X-Auth-Token':FD_TOKEN}};
-  try{const r=await fetch(url,hdrs);if(r.ok) return r;} catch(e){}
-  return fetch(proxied(url),hdrs);
+  const bust=url+(url.includes('?')?'&':'?')+'_='+Date.now();
+  const hdrs={headers:{'X-Auth-Token':FD_TOKEN,'Cache-Control':'no-cache'}};
+  try{const r=await fetch(bust,hdrs);if(r.ok) return r;} catch(e){}
+  return fetch(proxied(bust),hdrs);
 }
 
 async function fetchAll(){
