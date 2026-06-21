@@ -1091,6 +1091,25 @@ function refShort(ref){
   return '';
 }
 
+function slotConfidence(ref,name){
+  if(ref.startsWith('1_')){
+    if(_clinched1.has(name)) return 'certain';
+    if(_clinched.has(name)) return 'likely';
+    return 'uncertain';
+  }
+  if(ref.startsWith('2_')){
+    if(_clinched2.has(name)) return 'certain';
+    if(_clinched.has(name)) return 'likely';
+    return 'uncertain';
+  }
+  if(ref.startsWith('3_')) return 'uncertain';
+  if(ref.startsWith('W_')){
+    const d=KO[ref.slice(2)];
+    return(d&&d.h!==undefined&&d.a!==undefined)?'certain':'uncertain';
+  }
+  return 'uncertain';
+}
+
 function bkTeamRow(ref,mId,isHome){
   const name=resolve(ref);
   const d=KO[mId]||{};
@@ -1111,12 +1130,19 @@ ${hasScore?`<span class="bk-ms">${sc}</span>`:''}
 </div>`;
   }
 
-  const fUrl=flagUrl(name,32);
+  const conf=hasScore?'certain':slotConfidence(ref,name);
+  const opacity=conf==='certain'?1:conf==='likely'?0.78:0.48;
   const slotLocked=(ref.startsWith('1_')&&_clinched1.has(name))||(ref.startsWith('2_')&&_clinched2.has(name));
   const clinchBadge=slotLocked?'<span title="Clasificado — posición fija" style="font-size:.65rem;margin-left:2px">✅</span>':'';
-  return `<div class="bk-mt${win?' win':''}">
+  const confBadge=!slotLocked&&!hasScore?(
+    conf==='likely'
+      ?'<span title="Clasificado, posición aún no fija" style="font-size:.6rem;margin-left:3px;color:var(--ylw)">~</span>'
+      :'<span title="Proyección — puede cambiar" style="font-size:.6rem;margin-left:3px;color:var(--txt2)">?</span>'
+  ):'';
+  const fUrl=flagUrl(name,32);
+  return `<div class="bk-mt${win?' win':''}" style="opacity:${opacity}">
 ${fUrl?`<img class="bk-mf" src="${fUrl}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt=""><div class="bk-mf-placeholder" style="display:none">?</div>`:`<div class="bk-mf-placeholder">?</div>`}
-<span class="bk-mn">${name}${clinchBadge}</span>
+<span class="bk-mn">${name}${clinchBadge}${confBadge}</span>
 <span class="bk-mp">${lbl}</span>
 ${hasScore?`<span class="bk-ms">${sc}</span>`:''}
 </div>`;
