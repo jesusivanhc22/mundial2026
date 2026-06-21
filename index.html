@@ -318,6 +318,13 @@ header{background:linear-gradient(135deg,#0b2040,#07101f);padding:10px 16px;bord
     <div class="pred-lg"><span style="background:var(--red);opacity:.5"></span> Eliminado</div>
     <span style="font-size:.68rem;color:var(--txt2)">Basado en simulación Monte Carlo (10,000 escenarios)</span>
   </div>
+  <div style="background:var(--s1);border:1px solid var(--bd);border-radius:8px;overflow:hidden;margin-bottom:12px">
+    <div style="background:var(--s2);padding:7px 12px;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center">
+      <span style="font-weight:700;font-size:.85rem">🇲🇽 Rival probable de México en R32</span>
+      <span style="font-size:.65rem;color:var(--txt2)">3,000 simulaciones · fase de grupos completa</span>
+    </div>
+    <div id="mex-r32-card"><div style="padding:14px;text-align:center;color:var(--txt2);font-size:.75rem">Calculando…</div></div>
+  </div>
   <div class="pred-grid" id="pred-grid"></div>
 </div>
 
@@ -1318,6 +1325,7 @@ function renderAll(){
   if(gl){gl.innerHTML='';'GHIJKL'.split('').forEach(g=>gl.insertAdjacentHTML('beforeend',renderGroupCard(g)));}
   renderBracket();
   renderPredictions();
+  renderMexicoR32();
   renderStats();
   renderRuta();
 }
@@ -1817,6 +1825,118 @@ function simGroup(g,runs=10000){
   // Sort by current FIFA standing (same order as groups tab), not by advance%
   const standing=calcStandings(g).map(r=>r.t);
   return result.sort((a,b)=>standing.indexOf(a.t)-standing.indexOf(b.t));
+}
+
+function simBracket(runs=3000){
+  const gd={};
+  for(const g of 'ABCDEFGHIJKL'){
+    const ts=GRP[g].t;
+    const played=new Set();
+    GM.forEach((_,idx)=>{const d=GS[g+'_'+idx];if(d&&d.h!==undefined&&d.a!==undefined)played.add(idx);});
+    const remaining=GM.map((_,i)=>i).filter(i=>!played.has(i));
+    const base=ts.map(()=>({pts:0,gd:0,gf:0}));
+    const baseRes={};
+    GM.forEach((m,idx)=>{
+      if(!played.has(idx))return;
+      const d=GS[g+'_'+idx];const h=+d.h,a=+d.a;
+      base[m[0]].gf+=h;base[m[0]].gd+=h-a;base[m[1]].gf+=a;base[m[1]].gd+=a-h;
+      if(h>a)base[m[0]].pts+=3;else if(h<a)base[m[1]].pts+=3;else{base[m[0]].pts++;base[m[1]].pts++;}
+      baseRes[`${m[0]},${m[1]}`]={h,a};baseRes[`${m[1]},${m[0]}`]={h:a,a:h};
+    });
+    gd[g]={ts,base,baseRes,remaining};
+  }
+  function bkRankCluster(group,simRes,bRes){
+    if(group.length<=1)return group;
+    const out=[];let rem=[...group];
+    while(rem.length>0){
+      if(rem.length===1){out.push(rem[0]);break;}
+      const hh={};
+      rem.forEach(t=>{hh[t.i]={pts:0,gd:0,gf:0};});
+      rem.forEach(t=>rem.forEach(u=>{
+        if(t.i===u.i)return;
+        const r=simRes[`${t.i},${u.i}`]||bRes[`${t.i},${u.i}`];
+        if(!r)return;
+        hh[t.i].gf+=r.h;hh[t.i].gd+=r.h-r.a;
+        if(r.h>r.a)hh[t.i].pts+=3;else if(r.h===r.a)hh[t.i].pts+=1;
+      }));
+      const sc=rem.map(t=>({t,v:[hh[t.i].pts,hh[t.i].gd,hh[t.i].gf,t.gd,t.gf,-t.i]}));
+      sc.sort((a,b)=>{for(let k=0;k<a.v.length;k++)if(b.v[k]!==a.v[k])return b.v[k]-a.v[k];return 0;});
+      const topV=sc[0].v;
+      const top=sc.filter(x=>x.v.every((v,k)=>v===topV[k]));
+      if(top.length===rem.length){sc.forEach(x=>out.push(x.t));break;}
+      top.forEach(x=>out.push(x.t));
+      rem=sc.filter(x=>!top.includes(x)).map(x=>x.t);
+    }
+    return out;
+  }
+  const oppCount={};let mexFirst=0,mexSecond=0;
+  for(let r=0;r<runs;r++){
+    const allRanked={};
+    for(const g of 'ABCDEFGHIJKL'){
+      const{ts,base,baseRes,remaining}=gd[g];
+      const sim=base.map(b=>({...b}));
+      const simRes=Object.assign({},baseRes);
+      for(const idx of remaining){
+        const m=GM[idx];
+        const hg=Math.floor(Math.random()*4),ag=Math.floor(Math.random()*4);
+        sim[m[0]].gf+=hg;sim[m[0]].gd+=hg-ag;sim[m[1]].gf+=ag;sim[m[1]].gd+=ag-hg;
+        if(hg>ag)sim[m[0]].pts+=3;else if(ag>hg)sim[m[1]].pts+=3;else{sim[m[0]].pts++;sim[m[1]].pts++;}
+        simRes[`${m[0]},${m[1]}`]={h:hg,a:ag};simRes[`${m[1]},${m[0]}`]={h:ag,a:hg};
+      }
+      const teams=sim.map((s,i)=>({i,...s}));
+      teams.sort((a,b)=>b.pts-a.pts);
+      const ranked=[];let i2=0;
+      while(i2<teams.length){
+        let j=i2;while(j<teams.length&&teams[j].pts===teams[i2].pts)j++;
+        bkRankCluster(teams.slice(i2,j),simRes,baseRes).forEach(t=>ranked.push(t));
+        i2=j;
+      }
+      allRanked[g]=ranked.map(t=>({...t,name:ts[t.i]}));
+    }
+    const mexPos=allRanked['A'].findIndex(t=>t.name==='México');
+    let opp=null;
+    if(mexPos===0){
+      mexFirst++;
+      const thirds='ABCDEFGHIJKL'.split('').map(g=>({g,r:allRanked[g][2]}));
+      thirds.sort((a,b)=>b.r.pts-a.r.pts||b.r.gd-a.r.gd||b.r.gf-a.r.gf);
+      const adv8=thirds.slice(0,8).map(x=>x.g);
+      const asgn=assignThirds(adv8);
+      if(asgn['M79'])opp=allRanked[asgn['M79']][2].name;
+    } else if(mexPos===1){
+      mexSecond++;
+      opp=allRanked['B'][1].name;
+    }
+    if(opp)oppCount[opp]=(oppCount[opp]||0)+1;
+  }
+  const opps=Object.entries(oppCount)
+    .map(([t,c])=>({t,pct:Math.round(c/runs*100)}))
+    .sort((a,b)=>b.pct-a.pct);
+  return{opps,mexFirst:Math.round(mexFirst/runs*100),mexSecond:Math.round(mexSecond/runs*100)};
+}
+
+function renderMexicoR32(){
+  const el=document.getElementById('mex-r32-card');
+  if(!el)return;
+  setTimeout(()=>{
+    const{opps,mexFirst,mexSecond}=simBracket(3000);
+    const top=opps.filter(x=>x.pct>0).slice(0,10);
+    const maxPct=top[0]?.pct||1;
+    let html=`<div style="padding:10px 14px">
+<div style="font-size:.68rem;color:var(--txt2);margin-bottom:8px">
+  México 1° del Gr.A: <b>${mexFirst}%</b> &nbsp;·&nbsp; México 2° del Gr.A: <b>${mexSecond}%</b>
+  <span style="margin-left:6px;opacity:.7">(si 1°: rival del grupo CEFHI · si 2°: 2° del Gr.B)</span>
+</div>`;
+    for(const{t,pct}of top){
+      const w=Math.max(Math.round(pct/maxPct*150),3);
+      html+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+<div style="width:130px;font-size:.74rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${flag(t,16,11)} ${t}</div>
+<div style="background:var(--acc);height:12px;border-radius:3px;width:${w}px"></div>
+<span style="font-size:.72rem;min-width:30px;color:var(--txt)">${pct}%</span>
+</div>`;
+    }
+    html+=`</div>`;
+    el.innerHTML=html;
+  },10);
 }
 
 function renderPredictions(){
