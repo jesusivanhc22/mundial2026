@@ -1921,11 +1921,12 @@ function renderMexicoR32(){
     const{opps,mexFirst,mexSecond}=simBracket(3000);
     const top=opps.filter(x=>x.pct>0).slice(0,10);
     const maxPct=top[0]?.pct||1;
+    const mexLocked=_clinched1.has('México');
+    const subline=mexLocked
+      ? `<span style="color:var(--grn);font-weight:700">✅ México clasificó 1° Gr.A</span> <span style="opacity:.7">— rival del pool CEFHI</span>`
+      : `México 1° del Gr.A: <b>${mexFirst}%</b> &nbsp;·&nbsp; México 2° del Gr.A: <b>${mexSecond}%</b><span style="margin-left:6px;opacity:.7">(si 1°: rival CEFHI · si 2°: 2° Gr.B)</span>`;
     let html=`<div style="padding:10px 14px">
-<div style="font-size:.68rem;color:var(--txt2);margin-bottom:8px">
-  México 1° del Gr.A: <b>${mexFirst}%</b> &nbsp;·&nbsp; México 2° del Gr.A: <b>${mexSecond}%</b>
-  <span style="margin-left:6px;opacity:.7">(si 1°: rival del grupo CEFHI · si 2°: 2° del Gr.B)</span>
-</div>`;
+<div style="font-size:.68rem;color:var(--txt2);margin-bottom:8px">${subline}</div>`;
     for(const{t,pct}of top){
       const w=Math.max(Math.round(pct/maxPct*150),3);
       html+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
