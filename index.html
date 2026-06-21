@@ -592,23 +592,63 @@ const VENUES={
   537409:['AT&T Stadium','Dallas'],537410:['BMO Field','Toronto'],
   537411:['Gillette Stadium','Boston'],537412:['BMO Field','Toronto'],
   537413:['MetLife Stadium','New York/NJ'],537414:['Lincoln Financial Field','Philadelphia'],
-  // Eliminatorias (R32 → Final)
-  537417:['MetLife Stadium','New York/NJ'],537423:['SoFi Stadium','Los Ángeles'],
-  537415:['AT&T Stadium','Dallas'],537418:['Hard Rock Stadium','Miami'],
-  537424:['Rose Bowl','Los Ángeles'],537416:['NRG Stadium','Houston'],
-  537425:['Mercedes-Benz Stadium','Atlanta'],537426:['Lumen Field','Seattle'],
-  537422:['Lincoln Financial Field','Philadelphia'],537421:['Geodis Park','Nashville'],
-  537420:['Bank of America Stadium','Charlotte'],537419:['BMO Field','Toronto'],
-  537429:['Estadio BBVA','Monterrey'],537428:['Estadio Akron','Guadalajara'],
-  537427:['Estadio Azteca','CDMX'],537430:['SoFi Stadium','Los Ángeles'],
-  537376:['MetLife Stadium','New York/NJ'],537375:['AT&T Stadium','Dallas'],
-  537377:['Hard Rock Stadium','Miami'],537378:['NRG Stadium','Houston'],
-  537379:['SoFi Stadium','Los Ángeles'],537380:['Rose Bowl','Los Ángeles'],
-  537381:['Lumen Field','Seattle'],537382:['Lincoln Financial Field','Philadelphia'],
-  537383:['NRG Stadium','Houston'],537384:['SoFi Stadium','Los Ángeles'],
-  537385:['MetLife Stadium','New York/NJ'],537386:['AT&T Stadium','Dallas'],
-  537387:['AT&T Stadium','Dallas'],537388:['MetLife Stadium','New York/NJ'],
-  537389:['Hard Rock Stadium','Miami'],537390:['MetLife Stadium','New York/NJ']
+  // R32 (M73–M88)
+  537417:['SoFi Stadium','Los Ángeles'],      537423:['Gillette Stadium','Boston'],
+  537415:['Estadio BBVA','Monterrey'],         537418:['NRG Stadium','Houston'],
+  537424:['MetLife Stadium','New York/NJ'],    537416:['AT&T Stadium','Dallas'],
+  537425:['Estadio Azteca','CDMX'],            537426:['Mercedes-Benz Stadium','Atlanta'],
+  537422:["Levi's Stadium",'San Francisco'],   537421:['Lumen Field','Seattle'],
+  537420:['BMO Field','Toronto'],              537419:['SoFi Stadium','Los Ángeles'],
+  537429:['BC Place','Vancouver'],             537428:['Hard Rock Stadium','Miami'],
+  537427:['Arrowhead Stadium','Kansas City'],  537430:['AT&T Stadium','Dallas'],
+  // R16 (M89–M96)
+  537376:['Lincoln Financial Field','Philadelphia'], 537375:['NRG Stadium','Houston'],
+  537377:['MetLife Stadium','New York/NJ'],    537378:['Estadio Azteca','CDMX'],
+  537379:['AT&T Stadium','Dallas'],            537380:['Lumen Field','Seattle'],
+  537381:['Mercedes-Benz Stadium','Atlanta'],  537382:['BC Place','Vancouver'],
+  // Cuartos (M97–M100)
+  537383:['Gillette Stadium','Boston'],        537384:['SoFi Stadium','Los Ángeles'],
+  537385:['Hard Rock Stadium','Miami'],        537386:['Arrowhead Stadium','Kansas City'],
+  // Semis (M101–M102)
+  537387:['AT&T Stadium','Dallas'],            537388:['Mercedes-Benz Stadium','Atlanta'],
+  // 3° lugar y Final
+  537389:['Hard Rock Stadium','Miami'],        537390:['MetLife Stadium','New York/NJ']
+};
+
+// Fecha y sede fija por partido de eliminación (M73–M104)
+const KO_META={
+  M73:{date:'28 Jun',venue:'SoFi Stadium',city:'Los Ángeles'},
+  M74:{date:'29 Jun',venue:'Gillette Stadium',city:'Boston'},
+  M75:{date:'29 Jun',venue:'Estadio BBVA',city:'Monterrey'},
+  M76:{date:'29 Jun',venue:'NRG Stadium',city:'Houston'},
+  M77:{date:'30 Jun',venue:'MetLife Stadium',city:'New York/NJ'},
+  M78:{date:'30 Jun',venue:'AT&T Stadium',city:'Dallas'},
+  M79:{date:'30 Jun',venue:'Estadio Azteca',city:'CDMX'},
+  M80:{date:'1 Jul',venue:'Mercedes-Benz Stadium',city:'Atlanta'},
+  M81:{date:'1 Jul',venue:"Levi's Stadium",city:'San Francisco'},
+  M82:{date:'1 Jul',venue:'Lumen Field',city:'Seattle'},
+  M83:{date:'2 Jul',venue:'BMO Field',city:'Toronto'},
+  M84:{date:'2 Jul',venue:'SoFi Stadium',city:'Los Ángeles'},
+  M85:{date:'2 Jul',venue:'BC Place',city:'Vancouver'},
+  M86:{date:'3 Jul',venue:'Hard Rock Stadium',city:'Miami'},
+  M87:{date:'3 Jul',venue:'Arrowhead Stadium',city:'Kansas City'},
+  M88:{date:'3 Jul',venue:'AT&T Stadium',city:'Dallas'},
+  M89:{date:'4 Jul',venue:'Lincoln Financial Field',city:'Philadelphia'},
+  M90:{date:'4 Jul',venue:'NRG Stadium',city:'Houston'},
+  M91:{date:'5 Jul',venue:'MetLife Stadium',city:'New York/NJ'},
+  M92:{date:'5 Jul',venue:'Estadio Azteca',city:'CDMX'},
+  M93:{date:'6 Jul',venue:'AT&T Stadium',city:'Dallas'},
+  M94:{date:'6 Jul',venue:'Lumen Field',city:'Seattle'},
+  M95:{date:'7 Jul',venue:'Mercedes-Benz Stadium',city:'Atlanta'},
+  M96:{date:'7 Jul',venue:'BC Place',city:'Vancouver'},
+  M97:{date:'9 Jul',venue:'Gillette Stadium',city:'Boston'},
+  M98:{date:'10 Jul',venue:'SoFi Stadium',city:'Los Ángeles'},
+  M99:{date:'11 Jul',venue:'Hard Rock Stadium',city:'Miami'},
+  M100:{date:'11 Jul',venue:'Arrowhead Stadium',city:'Kansas City'},
+  M101:{date:'14 Jul',venue:'AT&T Stadium',city:'Dallas'},
+  M102:{date:'15 Jul',venue:'Mercedes-Benz Stadium',city:'Atlanta'},
+  M103:{date:'18 Jul',venue:'Hard Rock Stadium',city:'Miami'},
+  M104:{date:'19 Jul',venue:'MetLife Stadium',city:'New York/NJ'},
 };
 
 function processMatches(matches){
@@ -1078,12 +1118,18 @@ function bkCard(mId){
   const m=ALL_KO.find(x=>x.id===mId);
   if(!m) return '';
   const d=KO[mId]||{};
+  const meta=KO_META[mId]||{};
   const badge=d.state==='in'?'<span class="badge b-live">LIVE</span>':
               d.state==='post'?'<span class="badge b-fin">FIN</span>':'';
+  const venue=d.venue||meta.venue||'';
+  const city=d.city||meta.city||'';
+  const date=meta.date||'';
+  const venueLine=venue?`<div style="font-size:.6rem;color:var(--txt2);padding:2px 6px 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">📍 ${venue}${city?', '+city:''} · ${date}</div>`:'';
   return `<div class="bk-m" id="bk-${mId}">
 <div class="bk-mh"><span>${mId}</span>${badge}</div>
 ${bkTeamRow(m.home,mId,true)}
 ${bkTeamRow(m.away,mId,false)}
+${venueLine}
 </div>`;
 }
 
@@ -1557,8 +1603,9 @@ function exactGroupCertainties(g){
   });
   const remaining=GM.map((_,i)=>i).filter(i=>!played.has(i));
 
-  // Build base pts/gd/gf from played matches
+  // Base stats + base H2H results from played matches
   const base=ts.map(()=>({pts:0,gd:0,gf:0}));
+  const baseRes={}; // "hi,ai" -> {h,a}
   GM.forEach((m,idx)=>{
     if(!played.has(idx)) return;
     const d=GS[g+'_'+idx];
@@ -1568,26 +1615,68 @@ function exactGroupCertainties(g){
     if(h>a) base[m[0]].pts+=3;
     else if(h<a) base[m[1]].pts+=3;
     else{base[m[0]].pts++;base[m[1]].pts++;}
+    baseRes[`${m[0]},${m[1]}`]={h,a};
+    baseRes[`${m[1]},${m[0]}`]={h:a,a:h};
   });
 
   const n=remaining.length;
   const total=Math.pow(3,n);
-  // pos[teamIdx] = Set of positions (0-based) they achieve across all outcomes
   const posSet=ts.map(()=>new Set());
 
   for(let mask=0;mask<total;mask++){
     const sim=base.map(b=>({...b}));
+    const simRes={}; // simulated match results this scenario
     let m=mask;
     for(const idx of remaining){
       const[hi,ai]=GM[idx];
       const o=m%3; m=Math.floor(m/3);
-      // Use neutral 1-0 / 0-0 / 0-1 to avoid GD noise swamping pts
-      if(o===0){sim[hi].pts+=3; sim[hi].gf+=1; sim[hi].gd+=1; sim[ai].gd-=1;}
-      else if(o===1){sim[hi].pts+=1; sim[ai].pts+=1; sim[hi].gf+=1; sim[ai].gf+=1;}
-      else{sim[ai].pts+=3; sim[ai].gf+=1; sim[ai].gd+=1; sim[hi].gd-=1;}
+      // 1-0 win / 1-1 draw / 0-1 loss
+      const sh=o===2?0:1, sa=o===0?0:1;
+      sim[hi].pts+=sh>sa?3:sh===sa?1:0;
+      sim[ai].pts+=sa>sh?3:sh===sa?1:0;
+      sim[hi].gf+=sh; sim[hi].gd+=sh-sa;
+      sim[ai].gf+=sa; sim[ai].gd+=sa-sh;
+      simRes[`${hi},${ai}`]={h:sh,a:sa};
+      simRes[`${ai},${hi}`]={h:sa,a:sh};
     }
-    const ranked=sim.map((s,i)=>({i,...s})).sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf||a.i-b.i);
-    ranked.forEach((t,pos)=>posSet[t.i].add(pos));
+
+    // FIFA Art.13: rank a same-points cluster using H2H then overall GD/GF
+    function rankCluster(group){
+      if(group.length<=1) return group;
+      const out=[]; let rem=[...group];
+      while(rem.length>0){
+        if(rem.length===1){out.push(rem[0]);break;}
+        const hh={};
+        rem.forEach(t=>{hh[t.i]={pts:0,gd:0,gf:0};});
+        rem.forEach(t=>rem.forEach(u=>{
+          if(t.i===u.i) return;
+          const r=simRes[`${t.i},${u.i}`]||baseRes[`${t.i},${u.i}`];
+          if(!r) return;
+          hh[t.i].gf+=r.h; hh[t.i].gd+=r.h-r.a;
+          if(r.h>r.a) hh[t.i].pts+=3;
+          else if(r.h===r.a) hh[t.i].pts+=1;
+        }));
+        const sc=rem.map(t=>({t,v:[hh[t.i].pts,hh[t.i].gd,hh[t.i].gf,t.gd,t.gf,-t.i]}));
+        sc.sort((a,b)=>{for(let k=0;k<a.v.length;k++)if(b.v[k]!==a.v[k])return b.v[k]-a.v[k];return 0;});
+        const topV=sc[0].v;
+        const top=sc.filter(x=>x.v.every((v,k)=>v===topV[k]));
+        if(top.length===rem.length){sc.forEach(x=>out.push(x.t));break;}
+        top.forEach(x=>out.push(x.t));
+        rem=sc.filter(x=>!top.includes(x)).map(x=>x.t);
+      }
+      return out;
+    }
+
+    // Sort by pts, then resolve ties with FIFA Art.13
+    const teams=sim.map((s,i)=>({i,...s}));
+    teams.sort((a,b)=>b.pts-a.pts);
+    const sorted=[]; let i=0;
+    while(i<teams.length){
+      let j=i; while(j<teams.length&&teams[j].pts===teams[i].pts)j++;
+      rankCluster(teams.slice(i,j)).forEach(t=>sorted.push(t));
+      i=j;
+    }
+    sorted.forEach((t,pos)=>posSet[t.i].add(pos));
   }
 
   return ts.map((_,i)=>({
@@ -1628,8 +1717,9 @@ function simGroup(g,runs=10000){
     }));
   }
 
-  // Build base from played matches
+  // Build base stats + base H2H results from played matches
   const base=ts.map(()=>({pts:0,gd:0,gf:0}));
+  const mcBaseRes={};
   GM.forEach((m,idx)=>{
     if(!played.has(idx)) return;
     const d=GS[g+'_'+idx];
@@ -1639,11 +1729,41 @@ function simGroup(g,runs=10000){
     if(h>a) base[m[0]].pts+=3;
     else if(h<a) base[m[1]].pts+=3;
     else{base[m[0]].pts++;base[m[1]].pts++;}
+    mcBaseRes[`${m[0]},${m[1]}`]={h,a};
+    mcBaseRes[`${m[1]},${m[0]}`]={h:a,a:h};
   });
+
+  // FIFA Art.13 cluster ranker (shared by Monte Carlo runs)
+  function mcRankCluster(group,simRes){
+    if(group.length<=1) return group;
+    const out=[]; let rem=[...group];
+    while(rem.length>0){
+      if(rem.length===1){out.push(rem[0]);break;}
+      const hh={};
+      rem.forEach(t=>{hh[t.i]={pts:0,gd:0,gf:0};});
+      rem.forEach(t=>rem.forEach(u=>{
+        if(t.i===u.i) return;
+        const r=simRes[`${t.i},${u.i}`]||mcBaseRes[`${t.i},${u.i}`];
+        if(!r) return;
+        hh[t.i].gf+=r.h; hh[t.i].gd+=r.h-r.a;
+        if(r.h>r.a) hh[t.i].pts+=3;
+        else if(r.h===r.a) hh[t.i].pts+=1;
+      }));
+      const sc=rem.map(t=>({t,v:[hh[t.i].pts,hh[t.i].gd,hh[t.i].gf,t.gd,t.gf,-t.i]}));
+      sc.sort((a,b)=>{for(let k=0;k<a.v.length;k++)if(b.v[k]!==a.v[k])return b.v[k]-a.v[k];return 0;});
+      const topV=sc[0].v;
+      const top=sc.filter(x=>x.v.every((v,k)=>v===topV[k]));
+      if(top.length===rem.length){sc.forEach(x=>out.push(x.t));break;}
+      top.forEach(x=>out.push(x.t));
+      rem=sc.filter(x=>!top.includes(x)).map(x=>x.t);
+    }
+    return out;
+  }
 
   const counts=ts.map(()=>({first:0,second:0,third:0,elim:0}));
   for(let r=0;r<runs;r++){
     const sim=base.map(b=>({...b}));
+    const simRes={};
     for(const idx of remaining){
       const m=GM[idx];
       const hg=Math.floor(Math.random()*4), ag=Math.floor(Math.random()*4);
@@ -1652,8 +1772,18 @@ function simGroup(g,runs=10000){
       if(hg>ag) sim[m[0]].pts+=3;
       else if(ag>hg) sim[m[1]].pts+=3;
       else{sim[m[0]].pts++;sim[m[1]].pts++;}
+      simRes[`${m[0]},${m[1]}`]={h:hg,a:ag};
+      simRes[`${m[1]},${m[0]}`]={h:ag,a:hg};
     }
-    const ranked=sim.map((s,i)=>({i,...s})).sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf||a.i-b.i);
+    // FIFA Art.13: sort by pts then resolve ties with H2H
+    const teams=sim.map((s,i)=>({i,...s}));
+    teams.sort((a,b)=>b.pts-a.pts);
+    const ranked=[]; let i2=0;
+    while(i2<teams.length){
+      let j=i2; while(j<teams.length&&teams[j].pts===teams[i2].pts)j++;
+      mcRankCluster(teams.slice(i2,j),simRes).forEach(t=>ranked.push(t));
+      i2=j;
+    }
     counts[ranked[0].i].first++;
     counts[ranked[1].i].second++;
     counts[ranked[2].i].third++;
@@ -1684,7 +1814,9 @@ function simGroup(g,runs=10000){
     };
   });
 
-  return result.sort((a,b)=>b.advance-a.advance);
+  // Sort by current FIFA standing (same order as groups tab), not by advance%
+  const standing=calcStandings(g).map(r=>r.t);
+  return result.sort((a,b)=>standing.indexOf(a.t)-standing.indexOf(b.t));
 }
 
 function renderPredictions(){
