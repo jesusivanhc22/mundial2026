@@ -1272,7 +1272,7 @@ function renderRuta(){
 
   let h=`<div class="rcard"><div class="rcard-hdr">${flag(team,16,11)} Grupo ${g} — Posición actual</div>
 <div class="rcard-body">
-<strong>${pos+1}°</strong> lugar · ${row.pts} pts · DG ${row.gd>=0?'+':''}${row.gd} · ${row.pld}/6 partidos jugados<br>
+<strong>${pos+1}°</strong> lugar · ${row.pts} pts · DG ${row.gd>=0?'+':''}${row.gd} · ${row.w}G ${row.d}E ${row.l}P (${row.pld}/3 jugados)<br>
 Rivales: ${GRP[g].t.filter(t=>t!==team).join(' · ')}
 </div></div>`;
 
