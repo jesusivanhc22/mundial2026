@@ -541,17 +541,40 @@ function setApiStatus(icon,msg,cls){
   el.textContent=icon+' '+msg; el.className=cls;
 }
 
-function fdStatus(s){
-  // football-data.org statuses: SCHEDULED, TIMED, IN_PLAY, PAUSED, FINISHED, SUSPENDED, CANCELLED
-  if(s==='IN_PLAY'||s==='PAUSED') return 'in';
+function _matchLiveInfo(match){
+  // Returns {isLive:bool, min:number|null} based on scheduled time
+  // Used when API free tier doesn't send IN_PLAY status
+  const s=match.status||'';
+  if(s==='IN_PLAY'||s==='PAUSED') return {isLive:true, min:match.minute??null};
+  if(s==='FINISHED') return {isLive:false, min:null};
+  if(s==='TIMED'||s==='SCHEDULED'){
+    const diff=Date.now()-new Date(match.utcDate).getTime();
+    if(diff>0&&diff<110*60*1000) return {isLive:true, min:Math.min(Math.floor(diff/60000)+1,90)};
+  }
+  return {isLive:false, min:null};
+}
+
+function fdStatus(match){
+  const s=match.status||match; // accept string or object
+  if(typeof match==='string'){
+    if(s==='IN_PLAY'||s==='PAUSED') return 'in';
+    if(s==='FINISHED') return 'post';
+    return 'pre';
+  }
   if(s==='FINISHED') return 'post';
+  const li=_matchLiveInfo(match);
+  if(li.isLive) return 'in';
   return 'pre';
 }
 
 function fdText(match){
   if(match.status==='FINISHED') return 'Final';
-  if(match.status==='IN_PLAY') return 'En vivo';
   if(match.status==='PAUSED') return 'Medio tiempo';
+  const li=_matchLiveInfo(match);
+  if(li.isLive){
+    const min=li.min;
+    return min?`~${min}'`:'En vivo';
+  }
   // Format scheduled date in Mexico City time
   try{
     const d=new Date(match.utcDate);
@@ -675,7 +698,7 @@ function processMatches(matches){
     const aN = mapName(match.awayTeam?.name)||mapName(match.awayTeam?.shortName);
     if(!hN||!aN) continue;
 
-    const state = fdStatus(match.status);
+    const state = fdStatus(match);
     const text  = fdText(match);
     const v=VENUES[match.id];
     const venue = v?v[0]:(match.venue||'');
@@ -1417,10 +1440,12 @@ function renderToday(){
     const hs=hasScore?(m.score?.fullTime?.home??m.score?.halfTime?.home??'–'):'–';
     const as=hasScore?(m.score?.fullTime?.away??m.score?.halfTime?.away??'–'):'–';
 
+    const _li=_matchLiveInfo(m);
     let statusCls='sched',statusTxt='';
-    if(m.status==='IN_PLAY'){statusCls='live';statusTxt='🔴 EN VIVO'+(m.minute?' · '+m.minute+"'":'');}
+    if(m.status==='IN_PLAY'){statusCls='live';statusTxt='🔴 EN VIVO'+(m.minute?' · '+m.minute+"'":'· ~'+_li.min+"'");}
     else if(m.status==='PAUSED'){statusCls='live';statusTxt='⏸ MEDIO TIEMPO';}
     else if(m.status==='FINISHED'){statusCls='fin';statusTxt='✅ FINAL';}
+    else if(_li.isLive){statusCls='live';statusTxt='🔴 EN VIVO · ~'+_li.min+"'";}
     else{
       const d=new Date(m.utcDate);
       const timeStr=d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
@@ -1429,7 +1454,7 @@ function renderToday(){
       else{statusTxt='🕐 '+timeStr+' hrs';}
     }
 
-    const scCls=m.status==='IN_PLAY'||m.status==='PAUSED'?'live':m.status==='FINISHED'?'fin':'';
+    const scCls=_li.isLive||m.status==='FINISHED'?'live':'';
     const stage=m.stage==='GROUP_STAGE'?'Grupo '+m.group?.replace('GROUP_',''):'Eliminatoria';
     const v=VENUES[m.id];
     const venue=v?v[0]:(m.venue||'');
