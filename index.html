@@ -82,8 +82,8 @@ header{background:linear-gradient(135deg,#0b2040,#07101f);padding:10px 16px;bord
 .bk-mt:last-child{border-bottom:none}
 .bk-mt.win{background:rgba(59,130,246,.12);font-weight:700}
 .bk-mt.tbd{color:var(--txt2);font-style:italic;font-size:.67rem}
-.bk-mf{width:26px;height:26px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid var(--bd);background:var(--s3)}
-.bk-mf-placeholder{width:26px;height:26px;border-radius:50%;flex-shrink:0;border:2px solid var(--bd);background:var(--s3);display:flex;align-items:center;justify-content:center;font-size:.6rem;color:var(--txt2)}
+.bk-mf{width:22px;height:15px;border-radius:2px;object-fit:cover;flex-shrink:0;border:1px solid var(--bd);background:var(--s3)}
+.bk-mf-placeholder{width:22px;height:15px;border-radius:2px;flex-shrink:0;border:1px solid var(--bd);background:var(--s3);display:flex;align-items:center;justify-content:center;font-size:.55rem;color:var(--txt2)}
 .bk-mn{flex:1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bk-mp{font-size:.56rem;color:var(--txt2);font-weight:700;flex-shrink:0}
 .bk-ms{font-weight:800;color:var(--gold);font-size:.82rem;min-width:14px;text-align:right}
@@ -1134,7 +1134,7 @@ function bkTeamRow(ref,mId,isHome){
     const display=name.startsWith('__3RD__')?'3° '+name.slice(7).split('').join('/'):lbl;
     return `<div class="bk-mt tbd">
 <div class="bk-mf-placeholder">?</div>
-<span class="bk-mn">${display}</span>
+<span class="bk-mn" title="${display}">${display}</span>
 <span class="bk-mp">${lbl}</span>
 ${hasScore?`<span class="bk-ms">${sc}</span>`:''}
 </div>`;
@@ -1152,7 +1152,7 @@ ${hasScore?`<span class="bk-ms">${sc}</span>`:''}
   const fUrl=flagUrl(name,32);
   return `<div class="bk-mt${win?' win':''}" style="opacity:${opacity}">
 ${fUrl?`<img class="bk-mf" src="${fUrl}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt=""><div class="bk-mf-placeholder" style="display:none">?</div>`:`<div class="bk-mf-placeholder">?</div>`}
-<span class="bk-mn">${name}${clinchBadge}${confBadge}</span>
+<span class="bk-mn" title="${name}">${name}${clinchBadge}${confBadge}</span>
 <span class="bk-mp">${lbl}</span>
 ${hasScore?`<span class="bk-ms">${sc}</span>`:''}
 </div>`;
@@ -2120,12 +2120,18 @@ function scheduleRefresh(){
   if(_refreshTimer) clearInterval(_refreshTimer);
   const now=Date.now();
   const hasLive=_rawMatches.some(m=>m.status==='IN_PLAY'||m.status==='PAUSED');
+  // Partidos que YA deberían estar en vivo (API puede tardar en actualizar el status)
+  const shouldBeLive=_rawMatches.some(m=>{
+    if(m.status!=='TIMED'&&m.status!=='SCHEDULED') return false;
+    const diff=new Date(m.utcDate).getTime()-now;
+    return diff<0&&diff>-110*60*1000;
+  });
   const soonKO=_rawMatches.some(m=>{
     if(m.status!=='TIMED'&&m.status!=='SCHEDULED') return false;
     const diff=new Date(m.utcDate).getTime()-now;
     return diff>0&&diff<30*60*1000;
   });
-  const ms=hasLive?60*1000:soonKO?2*60*1000:5*60*1000;
+  const ms=(hasLive||shouldBeLive)?60*1000:soonKO?2*60*1000:5*60*1000;
   _refreshTimer=setInterval(()=>{fetchAll().then(()=>{fetchScorers();scheduleRefresh();});},ms);
   let _nextAt=Date.now()+ms;
   const nel=document.getElementById('next-upd');
@@ -2136,6 +2142,10 @@ function scheduleRefresh(){
   },1000);
 }
 let _countdownTimer=null;
+// Al volver al tab, refrescar inmediatamente
+document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden) fetchAll().then(()=>{fetchScorers();scheduleRefresh();});
+});
 </script>
 </body>
 </html>
