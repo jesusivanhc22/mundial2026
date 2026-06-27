@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Debug – WC2026 API</title>
+<style>
+body{font-family:monospace;background:#07101f;color:#f0f4f8;padding:16px}
+h2{color:#eab308}
+pre{background:#0e1c2f;padding:12px;border-radius:6px;overflow:auto;font-size:.8rem;white-space:pre-wrap}
+.ok{color:#22c55e} .err{color:#ef4444} .warn{color:#eab308}
+button{background:#3b82f6;color:#fff;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;margin:4px}
+</style>
+</head>
+<body>
+<h2>🔍 WC2026 API Debug</h2>
+<button onclick="testDirect()">Test Directo (CORS)</button>
+<button onclick="testProxy()">Test Proxy (corsproxy.io)</button>
+<button onclick="testProxy2()">Test Proxy 2 (allorigins)</button>
+<button onclick="showMappedMatches()">Mostrar partidos mapeados</button>
+<pre id="out">Presiona un botón...</pre>
+
+<script>
+const TOKEN = '75b2e1d074be43b893440e199a18dcea';
+const BASE  = 'https://api.football-data.org/v4';
+const out   = document.getElementById('out');
+
+function log(msg, cls=''){
+  out.innerHTML += `<span class="${cls}">${msg}</span>\n`;
+}
+
+function clear(){ out.innerHTML = ''; }
+
+async function testDirect(){
+  clear();
+  log('▶ Probando fetch DIRECTO a football-data.org...');
+  try {
+    const r = await fetch(`${BASE}/competitions/WC/matches`, {
+      headers:{'X-Auth-Token':TOKEN},
+      cache:'no-store'
+    });
+    log(`HTTP ${r.status} ${r.statusText}`, r.ok?'ok':'err');
+    const corsOrigin = r.headers.get('access-control-allow-origin');
+    log(`Access-Control-Allow-Origin: ${corsOrigin||'(no header)'}`, corsOrigin==='*'?'ok':'warn');
+    if(r.ok){
+      const data = await r.json();
+      log(`✅ Matches recibidos: ${data.matches?.length}`, 'ok');
+      showSample(data.matches);
+    }
+  } catch(e){
+    log(`❌ ERROR: ${e.message}`, 'err');
+    log('(Probablemente CORS bloqueado)', 'warn');
+  }
+}
+
+async function testProxy(){
+  clear();
+  log('▶ Probando fetch via CORSPROXY.IO...');
+  const url = 'https://api.football-data.org/v4/competitions/WC/matches?_='+Date.now();
+  const proxyUrl = 'https://corsproxy.io/?'+encodeURIComponent(url);
+  try {
+    const r = await fetch(proxyUrl, {headers:{'X-Auth-Token':TOKEN}});
+    log(`HTTP ${r.status} ${r.statusText}`, r.ok?'ok':'err');
+    if(!r.ok){
+      const txt = await r.text();
+      log(`Body: ${txt.slice(0,200)}`, 'err');
+      return;
+    }
+    const data = await r.json();
+    log(`✅ Matches recibidos: ${data.matches?.length}`, 'ok');
+    showSample(data.matches);
+  } catch(e){
+    log(`❌ ERROR: ${e.message}`, 'err');
+  }
+}
+
+async function testProxy2(){
+  clear();
+  log('▶ Probando fetch via ALLORIGINS.WIN...');
+  const apiUrl = `${BASE}/competitions/WC/matches`;
+  const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(apiUrl)}`;
+  try {
+    const r = await fetch(proxyUrl);
+    const wrapper = await r.json();
+    const data = JSON.parse(wrapper.contents);
+    log(`✅ Matches recibidos: ${data.matches?.length}`, 'ok');
+    log('⚠️ allorigins no puede pasar X-Auth-Token — este test no funcionará para auth', 'warn');
+  } catch(e){
+    log(`❌ ERROR: ${e.message}`, 'err');
+  }
+}
+
+function showSample(matches){
+  if(!matches) return;
+  const finished = matches.filter(m=>m.status==='FINISHED');
+  const live     = matches.filter(m=>m.status==='IN_PLAY'||m.status==='PAUSED');
+  const timed    = matches.filter(m=>m.status==='TIMED'||m.status==='SCHEDULED');
+  log(`\nBreakdown — FINISHED:${finished.length}  LIVE:${live.length}  TIMED:${timed.length}`);
+  log('\n=== Últimos 5 FINISHED ===');
+  finished.slice(-5).forEach(m=>{
+    log(`  ${m.homeTeam.name} ${m.score.fullTime.home}-${m.score.fullTime.away} ${m.awayTeam.name}  [${m.utcDate.slice(0,10)}]`);
+  });
+  if(live.length){
+    log('\n=== EN VIVO AHORA ===','ok');
+    live.forEach(m=>{
+      log(`  ${m.homeTeam.name} ${m.score.fullTime?.home??'?'}-${m.score.fullTime?.away??'?'} ${m.awayTeam.name}  min:${m.minute||'?'}`,'ok');
+    });
+  }
+  if(timed.length){
+    log(`\n=== Próximo partido (TIMED) ===`);
+    const next = timed[0];
+    log(`  ${next.homeTeam.name} vs ${next.awayTeam.name}  ${next.utcDate}`);
+  }
+}
+
+async function showMappedMatches(){
+  clear();
+  log('▶ Verificando mapeo de nombres...');
+
+  // NAME_MAP simplificado para verificar
+  const NM = {
+    'Mexico':'México','United States':'EUA','USA':'EUA','Canada':'Canadá',
+    'Brazil':'Brasil','Colombia':'Colombia','Argentina':'Argentina',
+    'Turkey':'Turquía','Türkiye':'Turquía','France':'Francia',
+    'Norway':'Noruega','Iraq':'Irak','Senegal':'Senegal',
+    'Paraguay':'Paraguay','Australia':'Australia',
+  };
+
+  const proxyUrl = 'https://corsproxy.io/?'+encodeURIComponent(`${BASE}/competitions/WC/matches`);
+  try {
+    const r = await fetch(proxyUrl, {headers:{'X-Auth-Token':TOKEN}});
+    const data = await r.json();
+    const finished = data.matches.filter(m=>m.status==='FINISHED');
+    log(`\n${finished.length} partidos FINISHED. Revisando nombres no mapeados:\n`);
+    const unmapped = new Set();
+    finished.forEach(m=>{
+      const hN = NM[m.homeTeam.name]||NM[m.homeTeam.shortName];
+      const aN = NM[m.awayTeam.name]||NM[m.awayTeam.shortName];
+      if(!hN) unmapped.add(m.homeTeam.name+' / '+m.homeTeam.shortName);
+      if(!aN) unmapped.add(m.awayTeam.name+' / '+m.awayTeam.shortName);
+    });
+    if(unmapped.size===0){
+      log('✅ Todos los equipos mapeados correctamente', 'ok');
+    } else {
+      log('⚠️ Equipos SIN mapear:', 'warn');
+      unmapped.forEach(n=>log('  - '+n, 'warn'));
+    }
+  } catch(e){
+    log(`❌ ${e.message}`, 'err');
+  }
+}
+</script>
+</body>
+</html>
