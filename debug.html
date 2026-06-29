@@ -2,150 +2,197 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Debug – WC2026 API</title>
+<title>Debug – WC2026</title>
 <style>
-body{font-family:monospace;background:#07101f;color:#f0f4f8;padding:16px}
+body{font-family:monospace;background:#07101f;color:#f0f4f8;padding:16px;max-width:900px;margin:0 auto}
 h2{color:#eab308}
-pre{background:#0e1c2f;padding:12px;border-radius:6px;overflow:auto;font-size:.8rem;white-space:pre-wrap}
+pre{background:#0e1c2f;padding:12px;border-radius:6px;overflow:auto;font-size:.75rem;white-space:pre-wrap;max-height:400px}
 .ok{color:#22c55e} .err{color:#ef4444} .warn{color:#eab308}
-button{background:#3b82f6;color:#fff;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;margin:4px}
+button{background:#3b82f6;color:#fff;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;margin:4px;font-family:monospace}
 </style>
 </head>
 <body>
-<h2>🔍 WC2026 API Debug</h2>
-<button onclick="testDirect()">Test Directo (CORS)</button>
-<button onclick="testProxy()">Test Proxy (corsproxy.io)</button>
-<button onclick="testProxy2()">Test Proxy 2 (allorigins)</button>
-<button onclick="showMappedMatches()">Mostrar partidos mapeados</button>
-<pre id="out">Presiona un botón...</pre>
+<h2>🔍 WC2026 Pipeline Debug</h2>
+<button onclick="runPipeline()">▶ Correr pipeline completo</button>
+<button onclick="checkFetchOnly()">Solo verificar fetch</button>
+<pre id="out">Presiona "Correr pipeline completo"...</pre>
 
 <script>
 const TOKEN = '75b2e1d074be43b893440e199a18dcea';
 const BASE  = 'https://api.football-data.org/v4';
 const out   = document.getElementById('out');
+const PROXY = s => 'https://corsproxy.io/?'+encodeURIComponent(s+'?_='+Date.now());
 
 function log(msg, cls=''){
   out.innerHTML += `<span class="${cls}">${msg}</span>\n`;
 }
+function clear(){ out.innerHTML=''; }
 
-function clear(){ out.innerHTML = ''; }
+// ── exact copy of GRP / GM / NMAP from main app ──────────────────────────────
+const GRP={
+  A:{t:['México','Sudáfrica','Corea del Sur','Chequia']},
+  B:{t:['Canadá','Bosnia y Herz.','Catar','Suiza']},
+  C:{t:['Brasil','Marruecos','Haití','Escocia']},
+  D:{t:['EUA','Paraguay','Australia','Turquía']},
+  E:{t:['Alemania','Curazao','Costa de Marfil','Ecuador']},
+  F:{t:['P. Bajos','Japón','Suecia','Túnez']},
+  G:{t:['Bélgica','Egipto','Irán','Nueva Zelanda']},
+  H:{t:['España','Cabo Verde','Arabia Saudita','Uruguay']},
+  I:{t:['Francia','Senegal','Irak','Noruega']},
+  J:{t:['Argentina','Argelia','Austria','Jordania']},
+  K:{t:['Portugal','DR Congo','Uzbekistán','Colombia']},
+  L:{t:['Inglaterra','Croacia','Ghana','Panamá']}
+};
+const GM=[[0,1,1],[2,3,1],[0,2,2],[3,1,2],[3,0,3],[1,2,3]];
 
-async function testDirect(){
-  clear();
-  log('▶ Probando fetch DIRECTO a football-data.org...');
-  try {
-    const r = await fetch(`${BASE}/competitions/WC/matches`, {
-      headers:{'X-Auth-Token':TOKEN},
-      cache:'no-store'
-    });
-    log(`HTTP ${r.status} ${r.statusText}`, r.ok?'ok':'err');
-    const corsOrigin = r.headers.get('access-control-allow-origin');
-    log(`Access-Control-Allow-Origin: ${corsOrigin||'(no header)'}`, corsOrigin==='*'?'ok':'warn');
-    if(r.ok){
-      const data = await r.json();
-      log(`✅ Matches recibidos: ${data.matches?.length}`, 'ok');
-      showSample(data.matches);
-    }
-  } catch(e){
-    log(`❌ ERROR: ${e.message}`, 'err');
-    log('(Probablemente CORS bloqueado)', 'warn');
-  }
+const NMAP={
+  'Mexico':'México','South Africa':'Sudáfrica',
+  'South Korea':'Corea del Sur','Korea Republic':'Corea del Sur',
+  'Czechia':'Chequia','Czech Republic':'Chequia',
+  'Canada':'Canadá','Bosnia and Herzegovina':'Bosnia y Herz.',
+  'Bosnia-Herzegovina':'Bosnia y Herz.','Qatar':'Catar','Switzerland':'Suiza',
+  'Brazil':'Brasil','Morocco':'Marruecos','Haiti':'Haití','Scotland':'Escocia',
+  'United States':'EUA','USA':'EUA','Paraguay':'Paraguay','Australia':'Australia',
+  'Turkey':'Turquía','Türkiye':'Turquía','Germany':'Alemania',
+  'Curacao':'Curazao','Curaçao':'Curazao',
+  "Ivory Coast":'Costa de Marfil',"Côte d'Ivoire":'Costa de Marfil',
+  'Ecuador':'Ecuador','Netherlands':'P. Bajos','Japan':'Japón',
+  'Sweden':'Suecia','Tunisia':'Túnez','Belgium':'Bélgica','Egypt':'Egipto',
+  'Iran':'Irán','IR Iran':'Irán','New Zealand':'Nueva Zelanda',
+  'Spain':'España','Cape Verde':'Cabo Verde','Cape Verde Islands':'Cabo Verde',
+  'Saudi Arabia':'Arabia Saudita','Uruguay':'Uruguay',
+  'France':'Francia','Senegal':'Senegal','Iraq':'Irak','Norway':'Noruega',
+  'Argentina':'Argentina','Algeria':'Argelia','Austria':'Austria','Jordan':'Jordania',
+  'Portugal':'Portugal','DR Congo':'DR Congo','Congo DR':'DR Congo',
+  'Democratic Republic of Congo':'DR Congo',
+  'Uzbekistan':'Uzbekistán','Colombia':'Colombia',
+  'England':'Inglaterra','Croatia':'Croacia','Ghana':'Ghana','Panama':'Panamá',
+  'South Africa':'Sudáfrica','Korea Republic':'Corea del Sur',
+  'Congo, the Democratic Republic of the':'DR Congo',
+  'Congo DR':'DR Congo','Senegal':'Senegal','Iraq':'Irak'
+};
+
+function mapName(n){
+  if(!n) return null;
+  if(NMAP[n]) return NMAP[n];
+  const lc=n.toLowerCase();
+  for(const[k,v] of Object.entries(NMAP)) if(k.toLowerCase()===lc) return v;
+  return null;
 }
 
-async function testProxy(){
+function findGM(hN,aN){
+  for(const g of 'ABCDEFGHIJKL'){
+    const ts=GRP[g].t;
+    const hi=ts.indexOf(hN),ai=ts.indexOf(aN);
+    if(hi<0||ai<0) continue;
+    const i=GM.findIndex(m=>m[0]===hi&&m[1]===ai);
+    if(i>=0) return {g,i,rev:false};
+    const ri=GM.findIndex(m=>m[0]===ai&&m[1]===hi);
+    if(ri>=0) return {g,i:ri,rev:true};
+  }
+  return null;
+}
+
+async function checkFetchOnly(){
   clear();
-  log('▶ Probando fetch via CORSPROXY.IO...');
-  const url = 'https://api.football-data.org/v4/competitions/WC/matches?_='+Date.now();
-  const proxyUrl = 'https://corsproxy.io/?'+encodeURIComponent(url);
+  log('Probando fetch vía proxy...');
   try {
-    const r = await fetch(proxyUrl, {headers:{'X-Auth-Token':TOKEN}});
-    log(`HTTP ${r.status} ${r.statusText}`, r.ok?'ok':'err');
-    if(!r.ok){
-      const txt = await r.text();
-      log(`Body: ${txt.slice(0,200)}`, 'err');
-      return;
-    }
+    const r = await fetch(PROXY(`${BASE}/competitions/WC/matches`), {headers:{'X-Auth-Token':TOKEN}});
+    log(`HTTP ${r.status}`, r.ok?'ok':'err');
+    if(!r.ok){ log(await r.text(),'err'); return; }
     const data = await r.json();
-    log(`✅ Matches recibidos: ${data.matches?.length}`, 'ok');
-    showSample(data.matches);
-  } catch(e){
-    log(`❌ ERROR: ${e.message}`, 'err');
-  }
-}
-
-async function testProxy2(){
-  clear();
-  log('▶ Probando fetch via ALLORIGINS.WIN...');
-  const apiUrl = `${BASE}/competitions/WC/matches`;
-  const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(apiUrl)}`;
-  try {
-    const r = await fetch(proxyUrl);
-    const wrapper = await r.json();
-    const data = JSON.parse(wrapper.contents);
-    log(`✅ Matches recibidos: ${data.matches?.length}`, 'ok');
-    log('⚠️ allorigins no puede pasar X-Auth-Token — este test no funcionará para auth', 'warn');
-  } catch(e){
-    log(`❌ ERROR: ${e.message}`, 'err');
-  }
-}
-
-function showSample(matches){
-  if(!matches) return;
-  const finished = matches.filter(m=>m.status==='FINISHED');
-  const live     = matches.filter(m=>m.status==='IN_PLAY'||m.status==='PAUSED');
-  const timed    = matches.filter(m=>m.status==='TIMED'||m.status==='SCHEDULED');
-  log(`\nBreakdown — FINISHED:${finished.length}  LIVE:${live.length}  TIMED:${timed.length}`);
-  log('\n=== Últimos 5 FINISHED ===');
-  finished.slice(-5).forEach(m=>{
-    log(`  ${m.homeTeam.name} ${m.score.fullTime.home}-${m.score.fullTime.away} ${m.awayTeam.name}  [${m.utcDate.slice(0,10)}]`);
-  });
-  if(live.length){
-    log('\n=== EN VIVO AHORA ===','ok');
-    live.forEach(m=>{
-      log(`  ${m.homeTeam.name} ${m.score.fullTime?.home??'?'}-${m.score.fullTime?.away??'?'} ${m.awayTeam.name}  min:${m.minute||'?'}`,'ok');
-    });
-  }
-  if(timed.length){
-    log(`\n=== Próximo partido (TIMED) ===`);
-    const next = timed[0];
-    log(`  ${next.homeTeam.name} vs ${next.awayTeam.name}  ${next.utcDate}`);
-  }
-}
-
-async function showMappedMatches(){
-  clear();
-  log('▶ Verificando mapeo de nombres...');
-
-  // NAME_MAP simplificado para verificar
-  const NM = {
-    'Mexico':'México','United States':'EUA','USA':'EUA','Canada':'Canadá',
-    'Brazil':'Brasil','Colombia':'Colombia','Argentina':'Argentina',
-    'Turkey':'Turquía','Türkiye':'Turquía','France':'Francia',
-    'Norway':'Noruega','Iraq':'Irak','Senegal':'Senegal',
-    'Paraguay':'Paraguay','Australia':'Australia',
-  };
-
-  const proxyUrl = 'https://corsproxy.io/?'+encodeURIComponent(`${BASE}/competitions/WC/matches`);
-  try {
-    const r = await fetch(proxyUrl, {headers:{'X-Auth-Token':TOKEN}});
-    const data = await r.json();
-    const finished = data.matches.filter(m=>m.status==='FINISHED');
-    log(`\n${finished.length} partidos FINISHED. Revisando nombres no mapeados:\n`);
-    const unmapped = new Set();
-    finished.forEach(m=>{
-      const hN = NM[m.homeTeam.name]||NM[m.homeTeam.shortName];
-      const aN = NM[m.awayTeam.name]||NM[m.awayTeam.shortName];
-      if(!hN) unmapped.add(m.homeTeam.name+' / '+m.homeTeam.shortName);
-      if(!aN) unmapped.add(m.awayTeam.name+' / '+m.awayTeam.shortName);
-    });
-    if(unmapped.size===0){
-      log('✅ Todos los equipos mapeados correctamente', 'ok');
-    } else {
-      log('⚠️ Equipos SIN mapear:', 'warn');
-      unmapped.forEach(n=>log('  - '+n, 'warn'));
-    }
+    log(`✅ ${data.matches?.length} partidos recibidos`, 'ok');
+    const fin = data.matches.filter(m=>m.status==='FINISHED').length;
+    const live = data.matches.filter(m=>m.status==='IN_PLAY'||m.status==='PAUSED').length;
+    const timed = data.matches.filter(m=>m.status==='TIMED'||m.status==='SCHEDULED').length;
+    log(`FINISHED:${fin}  LIVE:${live}  TIMED:${timed}`);
   } catch(e){
     log(`❌ ${e.message}`, 'err');
+  }
+}
+
+async function runPipeline(){
+  clear();
+  log('=== PASO 1: Fetch ===');
+  let matches;
+  try {
+    const r = await fetch(PROXY(`${BASE}/competitions/WC/matches`), {headers:{'X-Auth-Token':TOKEN}});
+    if(!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data = await r.json();
+    matches = data.matches || [];
+    log(`✅ ${matches.length} partidos recibidos`, 'ok');
+  } catch(e){
+    log(`❌ Fetch falló: ${e.message}`, 'err');
+    return;
+  }
+
+  log('\n=== PASO 2: processMatches ===');
+  const GS = {};
+  let mapped = 0, unmapped = 0;
+  const unmappedNames = new Set();
+  const KO_STAGES = new Set(['ROUND_OF_32','ROUND_OF_16','QUARTER_FINALS','SEMI_FINALS','THIRD_PLACE','FINAL']);
+
+  for(const match of matches){
+    const hN = mapName(match.homeTeam?.name)||mapName(match.homeTeam?.shortName);
+    const aN = mapName(match.awayTeam?.name)||mapName(match.awayTeam?.shortName);
+    if(!hN||!aN){
+      unmappedNames.add(`${match.homeTeam?.name}/${match.homeTeam?.shortName} vs ${match.awayTeam?.name}/${match.awayTeam?.shortName}`);
+      unmapped++; continue;
+    }
+    if(match.stage==='GROUP_STAGE'){
+      const m=findGM(hN,aN);
+      if(!m){ unmappedNames.add(`findGM failed: ${hN} vs ${aN}`); unmapped++; continue; }
+      const hasScore = match.status==='FINISHED'||match.status==='IN_PLAY'||match.status==='PAUSED';
+      const hs = hasScore ? (match.score?.fullTime?.home??match.score?.halfTime?.home??null) : null;
+      const as = hasScore ? (match.score?.fullTime?.away??match.score?.halfTime?.away??null) : null;
+      const entry={state:match.status==='FINISHED'?'post':match.status==='IN_PLAY'||match.status==='PAUSED'?'in':'pre'};
+      if(hs!==null&&as!==null){entry.h=m.rev?as:hs; entry.a=m.rev?hs:as;}
+      GS[m.g+'_'+m.i]=entry;
+      mapped++;
+    } else if(KO_STAGES.has(match.stage)){
+      mapped++;
+    }
+  }
+  log(`Mapeados: ${mapped}, No mapeados: ${unmapped}`, unmapped>0?'warn':'ok');
+  if(unmappedNames.size) {
+    log('No mapeados:', 'warn');
+    unmappedNames.forEach(n=>log('  ⚠ '+n,'warn'));
+  }
+
+  log('\n=== PASO 3: GS con marcadores ===');
+  const withScore = Object.entries(GS).filter(([,d])=>d.h!==undefined&&d.a!==undefined);
+  log(`Entradas GS con marcador: ${withScore.length} de ${Object.keys(GS).length}`, withScore.length>0?'ok':'err');
+  if(withScore.length===0){
+    log('❌ NINGÚN marcador fue almacenado — el problema está en processMatches','err');
+  } else {
+    // Show last 10 scored matches
+    withScore.slice(-10).forEach(([k,d])=>{
+      const g=k[0]; const idx=+k.slice(2);
+      const ts=GRP[g]?.t||[];
+      const m=GM[idx]||[];
+      const hName=ts[m[0]]||'?'; const aName=ts[m[1]]||'?';
+      const st=d.state==='post'?'FINAL':d.state==='in'?'EN VIVO':'PRE';
+      log(`  ${k}: ${hName} ${d.h}-${d.a} ${aName} [${st}]`, d.state==='in'?'ok':'');
+    });
+    log('\n✅ Pipeline funciona correctamente','ok');
+    log('Si los marcadores no aparecen en la app principal, el problema es en la renderización del HTML o que el browser tiene un script error.','warn');
+    log('Abre F12 → Console en la app principal y busca errores en rojo.','warn');
+  }
+
+  log('\n=== PASO 4: Verificar equipos SIN mapear por nombre ===');
+  const allApiNames = new Set();
+  matches.forEach(m=>{
+    allApiNames.add(m.homeTeam?.name);
+    allApiNames.add(m.homeTeam?.shortName);
+    allApiNames.add(m.awayTeam?.name);
+    allApiNames.add(m.awayTeam?.shortName);
+  });
+  const stillUnmapped = [...allApiNames].filter(n=>n && !mapName(n));
+  if(stillUnmapped.length){
+    log('Nombres de API sin mapear:', 'warn');
+    stillUnmapped.sort().forEach(n=>log('  - '+n,'warn'));
+  } else {
+    log('✅ Todos los nombres de equipos tienen mapeo', 'ok');
   }
 }
 </script>
