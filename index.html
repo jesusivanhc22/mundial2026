@@ -505,11 +505,11 @@ const FD_BASE  = 'https://api.football-data.org/v4';
 function proxied(url){ return 'https://corsproxy.io/?' + encodeURIComponent(url); }
 
 async function apiFetch(url){
-  const hdrs={headers:{'X-Auth-Token':FD_TOKEN},cache:'no-store'};
+  const hdrs={headers:{'X-Auth-Token':FD_TOKEN}};
   try{const r=await fetch(url,hdrs);if(r.ok) return r;} catch(e){}
-  // Bust proxy cache with timestamp so corsproxy.io doesn't serve stale data
+  // Only bust cache on the proxy URL (timestamp makes each proxy URL unique)
   const bustUrl=url+(url.includes('?')?'&':'?')+'_='+Date.now();
-  return fetch(proxied(bustUrl),{headers:{'X-Auth-Token':FD_TOKEN}});
+  return fetch(proxied(bustUrl),hdrs);
 }
 
 async function fetchAll(){
@@ -1102,18 +1102,32 @@ function refShort(ref){
   return '';
 }
 
+function groupDone(g){
+  let n=0;
+  GM.forEach((_,idx)=>{const d=GS[g+'_'+idx];if(d&&d.h!==undefined&&d.a!==undefined)n++;});
+  return n===6;
+}
+
 function slotConfidence(ref,name){
   if(ref.startsWith('1_')){
+    const g=ref[2];
+    if(groupDone(g)) return 'certain';
     if(_clinched1.has(name)) return 'certain';
     if(_clinched.has(name)) return 'likely';
     return 'uncertain';
   }
   if(ref.startsWith('2_')){
+    const g=ref[2];
+    if(groupDone(g)) return 'certain';
     if(_clinched2.has(name)) return 'certain';
     if(_clinched.has(name)) return 'likely';
     return 'uncertain';
   }
-  if(ref.startsWith('3_')) return 'uncertain';
+  if(ref.startsWith('3_')){
+    // Certain once all groups in the best-8 pool are done
+    const g=ref.slice(2);
+    return groupDone(g)?'certain':'uncertain';
+  }
   if(ref.startsWith('W_')){
     const d=KO[ref.slice(2)];
     return(d&&d.h!==undefined&&d.a!==undefined)?'certain':'uncertain';
