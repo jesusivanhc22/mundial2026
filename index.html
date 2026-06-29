@@ -722,10 +722,20 @@ function processMatches(matches){
     const venue=v?v[0]:(match.venue||''), city=v?v[1]:'';
     const state=fdStatus(match.status), text=fdText(match);
     const hasScore=match.status==='FINISHED'||match.status==='IN_PLAY'||match.status==='PAUSED';
-    const hs=hasScore?(match.score?.fullTime?.home??match.score?.halfTime?.home??null):null;
-    const as=hasScore?(match.score?.fullTime?.away??match.score?.halfTime?.away??null):null;
+    const pen=match.score?.penalties;
+    const hasPen=pen?.home!=null&&pen?.away!=null;
+    const ftH=match.score?.fullTime?.home??match.score?.halfTime?.home??null;
+    const ftA=match.score?.fullTime?.away??match.score?.halfTime?.away??null;
+    const regH=match.score?.regularTime?.home;
+    const regA=match.score?.regularTime?.away;
+    // regularTime = 90-min score; fallback: subtract penalty goals from fullTime (API quirk)
+    const hs=hasScore?(regH!=null?regH:(hasPen&&ftH!=null?ftH-pen.home:ftH)):null;
+    const as=hasScore?(regA!=null?regA:(hasPen&&ftA!=null?ftA-pen.away:ftA)):null;
     const entry={venue,city,state,text};
-    if(hs!==null&&as!==null){entry.h=hs; entry.a=as;}
+    if(hs!==null&&as!==null){
+      entry.h=hs; entry.a=as;
+      if(hasPen){entry.ph=pen.home; entry.pa=pen.away;}
+    }
     KO[mId]=entry;
   }
 }
@@ -969,6 +979,10 @@ function resolve(ref){
     if(m&&d&&d.h!==undefined&&d.a!==undefined){
       const h=resolve(m.home),a=resolve(m.away);
       if(+d.h>+d.a) return h; if(+d.a>+d.h) return a;
+      // Tied in ET → resolve via penalty shootout
+      if(d.ph!==undefined&&d.pa!==undefined){
+        if(+d.ph>+d.pa) return h; if(+d.pa>+d.ph) return a;
+      }
     }
     return 'Gan.'+mId;}
   if(ref.startsWith('L_')){
@@ -1150,10 +1164,13 @@ function bkTeamRow(ref,mId,isHome){
   const name=resolve(ref);
   const d=KO[mId]||{};
   const hasScore=d.h!==undefined&&d.a!==undefined;
+  const hasPen=d.ph!==undefined&&d.pa!==undefined;
   const sc=isHome?d.h:d.a;
   const unres=name.startsWith('__3RD__')||name.startsWith('Gan.')||name.startsWith('Per.');
   const m=ALL_KO.find(x=>x.id===mId);
-  const win=hasScore&&m&&((isHome&&+d.h>+d.a)||(!isHome&&+d.a>+d.h));
+  const winReg=hasScore&&((isHome&&+d.h>+d.a)||(!isHome&&+d.a>+d.h));
+  const winPen=hasScore&&hasPen&&+d.h===+d.a&&(isHome?+d.ph>+d.pa:+d.pa>+d.ph);
+  const win=m&&(winReg||winPen);
   const lbl=refShort(ref);
 
   if(unres){
@@ -1197,11 +1214,13 @@ function bkCard(mId){
   const city=d.city||meta.city||'';
   const date=meta.date||'';
   const venueLine=(city||venue)?`<div style="font-size:.6rem;color:var(--txt2);padding:2px 6px 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">📍 ${city||venue}${date?' · '+date:''}</div>`:'';
+  const penLine=(d.ph!==undefined&&d.pa!==undefined)?
+    `<div style="font-size:.55rem;text-align:center;color:var(--txt2);padding:1px 6px 3px">(${d.ph}–${d.pa} pen)</div>`:'';
   return `<div class="bk-m" id="bk-${mId}">
 <div class="bk-mh"><span>${mId}</span>${badge}</div>
 ${bkTeamRow(m.home,mId,true)}
 ${bkTeamRow(m.away,mId,false)}
-${venueLine}
+${penLine}${venueLine}
 </div>`;
 }
 
@@ -1442,8 +1461,13 @@ function renderToday(){
     const hN=mapName(m.homeTeam?.name)||mapName(m.homeTeam?.shortName)||m.homeTeam?.shortName||'?';
     const aN=mapName(m.awayTeam?.name)||mapName(m.awayTeam?.shortName)||m.awayTeam?.shortName||'?';
     const hasScore=m.status==='FINISHED'||m.status==='IN_PLAY'||m.status==='PAUSED';
-    const hs=hasScore?(m.score?.fullTime?.home??m.score?.halfTime?.home??'–'):'–';
-    const as=hasScore?(m.score?.fullTime?.away??m.score?.halfTime?.away??'–'):'–';
+    const mpen=m.score?.penalties;
+    const mhasPen=mpen?.home!=null&&mpen?.away!=null;
+    const mftH=m.score?.fullTime?.home,mftA=m.score?.fullTime?.away;
+    const mregH=m.score?.regularTime?.home,mregA=m.score?.regularTime?.away;
+    const hs=hasScore?(mregH!=null?mregH:(mhasPen&&mftH!=null?mftH-mpen.home:mftH)??m.score?.halfTime?.home??'–'):'–';
+    const as=hasScore?(mregA!=null?mregA:(mhasPen&&mftA!=null?mftA-mpen.away:mftA)??m.score?.halfTime?.away??'–'):'–';
+    const penStr=mhasPen?`<div style="font-size:.68rem;text-align:center;color:var(--txt2);margin:0 0 4px">(${mpen.home}–${mpen.away} pen)</div>`:'';
 
     let statusCls='sched',statusTxt='';
     if(m.status==='IN_PLAY'){statusCls='live';statusTxt='🔴 EN VIVO'+(m.minute?' · '+m.minute+"'":'');}
@@ -1471,7 +1495,7 @@ function renderToday(){
   <div class="tcard-vs"><div class="tcard-sc ${scCls}">${hs}</div><span class="msep">–</span><div class="tcard-sc ${scCls}">${as}</div></div>
   <div class="tcard-t away">${aN} ${flag(aN,24,16)}</div>
 </div>
-<div class="tcard-info"><span>${stage}</span>${venueStr?'<span>📍 '+venueStr+'</span>':''}</div>
+${penStr}<div class="tcard-info"><span>${stage}</span>${venueStr?'<span>📍 '+venueStr+'</span>':''}</div>
 </div>`;
   }
   grid.innerHTML=html;
