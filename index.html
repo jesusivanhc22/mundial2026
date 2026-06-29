@@ -367,20 +367,32 @@ const GRP = {
 const GM = [[0,1,1],[2,3,1],[0,2,2],[3,1,2],[3,0,3],[1,2,3]];
 
 const R32 = [
-  {id:'M73',home:'2_A',away:'2_B'}, {id:'M76',home:'1_C',away:'2_F'},
-  {id:'M74',home:'1_E',away:'3_ABCDF'},{id:'M75',home:'1_F',away:'2_C'},
-  {id:'M78',home:'2_E',away:'2_I'},  {id:'M77',home:'1_I',away:'3_CDFGH'},
-  {id:'M79',home:'1_A',away:'3_CEFHI'},{id:'M80',home:'1_L',away:'3_EHIJK'},
-  {id:'M82',home:'1_G',away:'3_AEHIJ'},{id:'M81',home:'1_D',away:'3_BEFIJ'},
-  {id:'M84',home:'1_H',away:'2_J'},  {id:'M88',home:'2_D',away:'2_G'},
-  {id:'M86',home:'1_J',away:'2_H'},  {id:'M87',home:'1_K',away:'3_DEIJL'},
-  {id:'M83',home:'2_K',away:'2_L'},  {id:'M85',home:'1_B',away:'3_EFGIJ'}
+  {id:'M73',home:'2_A',away:'2_B'},  // Sudáfrica vs Canadá
+  {id:'M74',home:'1_C',away:'2_F'},  // Brasil vs Japón
+  {id:'M75',home:'1_E',away:'3_D'},  // Alemania vs Paraguay
+  {id:'M76',home:'1_F',away:'2_C'},  // P. Bajos vs Marruecos
+  {id:'M77',home:'2_E',away:'2_I'},  // Costa de Marfil vs Noruega
+  {id:'M78',home:'1_I',away:'3_F'},  // Francia vs Suecia
+  {id:'M79',home:'1_A',away:'3_E'},  // México vs Ecuador
+  {id:'M80',home:'1_L',away:'3_K'},  // Inglaterra vs DR Congo
+  {id:'M81',home:'1_G',away:'3_I'},  // Bélgica vs Senegal
+  {id:'M82',home:'1_D',away:'3_B'},  // EUA vs Bosnia y Herz.
+  {id:'M83',home:'1_H',away:'2_J'},  // España vs Austria
+  {id:'M84',home:'2_K',away:'2_L'},  // Portugal vs Croacia
+  {id:'M85',home:'1_B',away:'3_J'},  // Suiza vs Argelia
+  {id:'M86',home:'2_D',away:'2_G'},  // Australia vs Egipto
+  {id:'M87',home:'1_J',away:'2_H'},  // Argentina vs Cabo Verde
+  {id:'M88',home:'1_K',away:'3_L'},  // Colombia vs Ghana
 ];
 const R16 = [
-  {id:'M90',home:'W_M73',away:'W_M75'},{id:'M89',home:'W_M74',away:'W_M77'},
-  {id:'M91',home:'W_M76',away:'W_M78'},{id:'M92',home:'W_M79',away:'W_M80'},
-  {id:'M93',home:'W_M83',away:'W_M84'},{id:'M94',home:'W_M81',away:'W_M82'},
-  {id:'M95',home:'W_M86',away:'W_M88'},{id:'M96',home:'W_M85',away:'W_M87'}
+  {id:'M89',home:'W_M74',away:'W_M77'}, // Brasil/Japón vs C.Marfil/Noruega
+  {id:'M90',home:'W_M73',away:'W_M75'}, // Canadá/SudAfrica vs Alemania/Paraguay
+  {id:'M91',home:'W_M76',away:'W_M78'}, // P.Bajos/Marruecos vs Francia/Suecia
+  {id:'M92',home:'W_M79',away:'W_M80'}, // México/Ecuador vs Inglaterra/Congo
+  {id:'M93',home:'W_M83',away:'W_M84'}, // España/Austria vs Portugal/Croacia
+  {id:'M94',home:'W_M81',away:'W_M82'}, // Bélgica/Senegal vs EUA/Bosnia
+  {id:'M95',home:'W_M86',away:'W_M88'}, // Australia/Egipto vs Colombia/Ghana
+  {id:'M96',home:'W_M85',away:'W_M87'}, // Suiza/Argelia vs Argentina/Cabo Verde
 ];
 const QF  = [
   {id:'M97',home:'W_M89',away:'W_M90'},{id:'M98',home:'W_M93',away:'W_M94'},
@@ -391,23 +403,16 @@ const M3  = {id:'M103',home:'L_M101',away:'L_M102'};
 const MF  = {id:'M104',home:'W_M101',away:'W_M102'};
 const ALL_KO = [...R32,...R16,...QF,...SF,M3,MF];
 
-const THIRD_EL = {
-  M74:['A','B','C','D','F'],M77:['C','D','F','G','H'],M79:['C','E','F','H','I'],
-  M80:['E','H','I','J','K'],M81:['B','E','F','I','J'],M82:['A','E','H','I','J'],
-  M85:['E','F','G','I','J'],M87:['D','E','I','J','L']
-};
-const FIFA_COMBOS = {
-  'EFGHIJKL':{M79:'E',M85:'J',M81:'I',M74:'F',M82:'H',M77:'G',M87:'L',M80:'K'},
-  'DFGHIJKL':{M79:'H',M85:'G',M81:'I',M74:'D',M82:'J',M77:'F',M87:'L',M80:'K'},
-  'DEGHIJKL':{M79:'E',M85:'J',M81:'I',M74:'D',M82:'H',M77:'G',M87:'L',M80:'K'},
-  'DEFHIJKL':{M79:'E',M85:'J',M81:'I',M74:'D',M82:'H',M77:'F',M87:'L',M80:'K'},
-  'DEFGIJKL':{M79:'E',M85:'G',M81:'I',M74:'D',M82:'J',M77:'F',M87:'L',M80:'K'},
-  'DEFGHJKL':{M79:'E',M85:'G',M81:'J',M74:'D',M82:'H',M77:'F',M87:'L',M80:'K'},
-  'DEFGHIKL':{M79:'E',M85:'G',M81:'I',M74:'D',M82:'H',M77:'F',M87:'L',M80:'K'},
-  'DEFGHIJL':{M79:'E',M85:'G',M81:'J',M74:'D',M82:'H',M77:'F',M87:'L',M80:'I'},
-  'DEFGHIJK':{M79:'E',M85:'G',M81:'J',M74:'D',M82:'H',M77:'F',M87:'I',M80:'K'},
-  'CFGHIJKL':{M79:'H',M85:'G',M81:'I',M74:'C',M82:'J',M77:'F',M87:'L',M80:'K'},
-  'ABCDEFGH':{M79:'H',M85:'G',M81:'B',M74:'C',M82:'A',M77:'F',M87:'D',M80:'E'},
+// Mapeo directo de ID de API football-data.org → M-ID interno
+const KO_API_MAP = {
+  537417:'M73',537423:'M74',537415:'M75',537418:'M76',
+  537424:'M77',537416:'M78',537425:'M79',537426:'M80',
+  537422:'M81',537421:'M82',537420:'M83',537419:'M84',
+  537429:'M85',537428:'M86',537427:'M87',537430:'M88',
+  537375:'M89',537376:'M90',537377:'M91',537378:'M92',
+  537379:'M93',537380:'M94',537381:'M95',537382:'M96',
+  537383:'M97',537384:'M98',537385:'M99',537386:'M100',
+  537387:'M101',537388:'M102',537389:'M103',537390:'M104'
 };
 
 // ─── FLAGS (flagcdn.com — no hotlink restrictions) ──────────────────────────
@@ -560,7 +565,7 @@ function fdText(match){
   }catch(e){return '';}
 }
 
-const KO_STAGES = new Set(['ROUND_OF_32','ROUND_OF_16','QUARTER_FINALS','SEMI_FINALS','THIRD_PLACE','FINAL']);
+const KO_STAGES = new Set(['ROUND_OF_32','LAST_32','ROUND_OF_16','LAST_16','QUARTER_FINALS','SEMI_FINALS','THIRD_PLACE','FINAL']);
 
 const VENUES={
   // Grupo A
@@ -671,35 +676,40 @@ const KO_META={
 };
 
 function processMatches(matches){
+  // Paso 1: fase de grupos — poblar GS completo antes de procesar eliminatorias
   for(const match of matches){
+    if(match.stage!=='GROUP_STAGE') continue;
     const hN = mapName(match.homeTeam?.name)||mapName(match.homeTeam?.shortName);
     const aN = mapName(match.awayTeam?.name)||mapName(match.awayTeam?.shortName);
     if(!hN||!aN) continue;
-
-    const state = fdStatus(match.status);
-    const text  = fdText(match);
+    const m=findGM(hN,aN);
+    if(!m) continue;
+    apiMatches++;
     const v=VENUES[match.id];
-    const venue = v?v[0]:(match.venue||'');
-    const city = v?v[1]:'';
-    const hasScore = match.status==='FINISHED'||match.status==='IN_PLAY'||match.status==='PAUSED';
-    const hs = hasScore ? (match.score?.fullTime?.home??match.score?.halfTime?.home??null) : null;
-    const as = hasScore ? (match.score?.fullTime?.away??match.score?.halfTime?.away??null) : null;
-
-    if(match.stage==='GROUP_STAGE'){
-      const m=findGM(hN,aN);
-      if(!m) continue;
-      apiMatches++;
-      const entry={venue,city,state,text};
-      if(hs!==null&&as!==null){entry.h=m.rev?as:hs; entry.a=m.rev?hs:as;}
-      GS[m.g+'_'+m.i]=entry;
-    } else if(KO_STAGES.has(match.stage)){
-      const mId=findKOMId(hN,aN);
-      if(!mId) continue;
-      apiMatches++;
-      const entry={venue,city,state,text};
-      if(hs!==null&&as!==null){entry.h=hs; entry.a=as;}
-      KO[mId]=entry;
-    }
+    const venue=v?v[0]:(match.venue||''), city=v?v[1]:'';
+    const state=fdStatus(match.status), text=fdText(match);
+    const hasScore=match.status==='FINISHED'||match.status==='IN_PLAY'||match.status==='PAUSED';
+    const hs=hasScore?(match.score?.fullTime?.home??match.score?.halfTime?.home??null):null;
+    const as=hasScore?(match.score?.fullTime?.away??match.score?.halfTime?.away??null):null;
+    const entry={venue,city,state,text};
+    if(hs!==null&&as!==null){entry.h=m.rev?as:hs; entry.a=m.rev?hs:as;}
+    GS[m.g+'_'+m.i]=entry;
+  }
+  // Paso 2: eliminatorias — GS ya poblado, KO_API_MAP da lookup directo sin resolve()
+  for(const match of matches){
+    if(!KO_STAGES.has(match.stage)) continue;
+    const mId=KO_API_MAP[match.id];
+    if(!mId) continue;
+    apiMatches++;
+    const v=VENUES[match.id];
+    const venue=v?v[0]:(match.venue||''), city=v?v[1]:'';
+    const state=fdStatus(match.status), text=fdText(match);
+    const hasScore=match.status==='FINISHED'||match.status==='IN_PLAY'||match.status==='PAUSED';
+    const hs=hasScore?(match.score?.fullTime?.home??match.score?.halfTime?.home??null):null;
+    const as=hasScore?(match.score?.fullTime?.away??match.score?.halfTime?.away??null):null;
+    const entry={venue,city,state,text};
+    if(hs!==null&&as!==null){entry.h=hs; entry.a=as;}
+    KO[mId]=entry;
   }
 }
 
@@ -864,23 +874,8 @@ function best8(){
 }
 
 function assignThirds(adv){
-  const key=[...adv].sort().join('');
-  if(FIFA_COMBOS[key]) return FIFA_COMBOS[key];
-  const slots=['M74','M77','M79','M80','M81','M82','M85','M87'];
-  const asgn={},used=new Set();
-  function bt(i){
-    if(i===slots.length) return true;
-    const sl=slots[i];
-    for(const g of [...adv].sort()){
-      if(!used.has(g)&&THIRD_EL[sl].includes(g)){
-        asgn[sl]=g;used.add(g);
-        if(bt(i+1)) return true;
-        delete asgn[sl];used.delete(g);
-      }
-    }
-    return false;
-  }
-  bt(0); return asgn;
+  // Asignación fija según el bracket real de WC2026
+  return {M75:'D',M78:'F',M79:'E',M80:'K',M81:'I',M82:'B',M85:'J',M88:'L'};
 }
 
 // ─── PROVISIONAL THIRD-PLACE ASSIGNMENT (no duplicates) ─────────────────────
@@ -921,8 +916,7 @@ function computeProvisionalThirds(){
 
 // ─── RESOLVE TEAM FROM REF ────────────────────────────────────────────────────
 const THIRD_RMAP={
-  'ABCDF':'M74','CDFGH':'M77','CEFHI':'M79','EHIJK':'M80',
-  'BEFIJ':'M81','AEHIJ':'M82','EFGIJ':'M85','DEIJL':'M87'
+  D:'M75',F:'M78',E:'M79',K:'M80',I:'M81',B:'M82',J:'M85',L:'M88'
 };
 
 // Returns human-readable position label for a bracket ref
