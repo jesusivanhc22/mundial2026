@@ -219,7 +219,7 @@ header{background:linear-gradient(135deg,#0b2040,#07101f);padding:10px 16px;bord
     <span class="dot" id="dot"></span>
     <span class="upd-txt" id="upd">Cargando…</span>
     <span class="upd-txt" id="next-upd" style="font-size:.6rem;opacity:.6"></span>
-    <button class="rbtn" id="rbtn" onclick="fetchAll().then(()=>{fetchScorers();scheduleRefresh();})">
+    <button class="rbtn" id="rbtn" onclick="_rcache('wc26m') && localStorage.removeItem('wc26m'); fetchAll().then(()=>{fetchScorers();scheduleRefresh();})">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
       Actualizar
     </button>
@@ -510,35 +510,52 @@ const FD_BASE  = 'https://api.football-data.org/v4';
 function proxied(url){ return 'https://corsproxy.io/?' + encodeURIComponent(url); }
 
 async function apiFetch(url){
+  // Desde GitHub Pages el fetch directo siempre falla (CORS preflight rechazado).
+  // Siempre usar proxy con cache-buster para evitar respuestas stale de corsproxy.io.
   const hdrs={headers:{'X-Auth-Token':FD_TOKEN}};
-  try{const r=await fetch(url,hdrs);if(r.ok) return r;} catch(e){}
-  // Only bust cache on the proxy URL (timestamp makes each proxy URL unique)
   const bustUrl=url+(url.includes('?')?'&':'?')+'_='+Date.now();
   return fetch(proxied(bustUrl),hdrs);
 }
 
+// ─── CACHÉ LOCAL (evita golpear corsproxy.io en cada refresh) ────────────────
+const _CACHE_TTL=2*60*1000; // 2 minutos
+function _rcache(k){try{const c=localStorage.getItem(k);if(c){const p=JSON.parse(c);if(Date.now()-p.ts<_CACHE_TTL)return p.d;}}catch(e){}return null;}
+function _wcache(k,d){try{localStorage.setItem(k,JSON.stringify({ts:Date.now(),d}));}catch(e){}}
+
+let _fetchInFlight=false;
 async function fetchAll(){
+  if(_fetchInFlight) return; // evitar requests paralelos
+  _fetchInFlight=true;
   const btn=document.getElementById('rbtn');
   btn.classList.add('spin');
   setApiStatus('⏳','Conectando…','');
   try {
-    const r = await apiFetch(`${FD_BASE}/competitions/WC/matches`);
-    if(!r.ok) throw new Error(`HTTP ${r.status} — ${r.statusText}`);
-    const data = await r.json();
-    apiMatches = 0;
-    GS = {}; KO = {};
-    _rawMatches = data.matches||[];
+    const cached=_rcache('wc26m');
+    let matches;
+    if(cached){
+      matches=cached;
+      setApiStatus('✅','football-data.org — datos en caché','api-ok');
+    } else {
+      const r = await apiFetch(`${FD_BASE}/competitions/WC/matches`);
+      if(!r.ok) throw new Error(`HTTP ${r.status} — ${r.statusText}`);
+      const data = await r.json();
+      matches = data.matches||[];
+      _wcache('wc26m', matches);
+    }
+    apiMatches = 0; GS = {}; KO = {};
+    _rawMatches = matches;
     processMatches(_rawMatches);
     const t=new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
     document.getElementById('dot').style.display='inline-block';
     document.getElementById('upd').textContent='Actualizado: '+t;
-    setApiStatus('✅','football-data.org — '+apiMatches+' partidos cargados','api-ok');
+    if(!cached){_lastFetchAt=Date.now();setApiStatus('✅','football-data.org — '+apiMatches+' partidos cargados','api-ok');}
   } catch(e) {
     document.getElementById('dot').style.display='none';
     document.getElementById('upd').textContent='Sin conexión';
-    setApiStatus('❌','Error: '+e.message+' — abre la consola del navegador (F12) para más detalles','api-err');
+    setApiStatus('❌','Error: '+e.message,'api-err');
   }
   btn.classList.remove('spin');
+  _fetchInFlight=false;
   renderAll();
 }
 
@@ -2125,13 +2142,12 @@ function populateSel(){
 populateSel();
 renderAll();
 fetchTeams();
-fetchAll().then(()=>{fetchScorers();scheduleRefresh();});
+fetchAll().then(()=>{fetchScorers();scheduleRefresh();_lastFetchAt=Date.now();});
 let _refreshTimer=null;
 function scheduleRefresh(){
   if(_refreshTimer) clearInterval(_refreshTimer);
   const now=Date.now();
   const hasLive=_rawMatches.some(m=>m.status==='IN_PLAY'||m.status==='PAUSED');
-  // Partidos que YA deberían estar en vivo (API puede tardar en actualizar el status)
   const shouldBeLive=_rawMatches.some(m=>{
     if(m.status!=='TIMED'&&m.status!=='SCHEDULED') return false;
     const diff=new Date(m.utcDate).getTime()-now;
@@ -2142,8 +2158,9 @@ function scheduleRefresh(){
     const diff=new Date(m.utcDate).getTime()-now;
     return diff>0&&diff<30*60*1000;
   });
-  const ms=(hasLive||shouldBeLive)?60*1000:soonKO?2*60*1000:5*60*1000;
-  _refreshTimer=setInterval(()=>{fetchAll().then(()=>{fetchScorers();scheduleRefresh();});},ms);
+  // Intervalos más conservadores para no saturar corsproxy.io
+  const ms=(hasLive||shouldBeLive)?3*60*1000:soonKO?5*60*1000:20*60*1000;
+  _refreshTimer=setInterval(()=>{fetchAll().then(()=>scheduleRefresh());},ms);
   let _nextAt=Date.now()+ms;
   const nel=document.getElementById('next-upd');
   if(_countdownTimer) clearInterval(_countdownTimer);
@@ -2153,9 +2170,13 @@ function scheduleRefresh(){
   },1000);
 }
 let _countdownTimer=null;
-// Al volver al tab, refrescar inmediatamente
+// Al volver al tab, refrescar solo si pasaron más de 2 minutos desde el último fetch
+let _lastFetchAt=0;
 document.addEventListener('visibilitychange',()=>{
-  if(!document.hidden) fetchAll().then(()=>{fetchScorers();scheduleRefresh();});
+  if(!document.hidden&&Date.now()-_lastFetchAt>2*60*1000){
+    _lastFetchAt=Date.now();
+    fetchAll().then(()=>scheduleRefresh());
+  }
 });
 </script>
 </body>
