@@ -722,19 +722,27 @@ function processMatches(matches){
     const venue=v?v[0]:(match.venue||''), city=v?v[1]:'';
     const state=fdStatus(match.status), text=fdText(match);
     const hasScore=match.status==='FINISHED'||match.status==='IN_PLAY'||match.status==='PAUSED';
-    const pen=match.score?.penalties;
-    const hasPen=pen?.home!=null&&pen?.away!=null;
+    const isPen=match.score?.duration==='PENALTY_SHOOTOUT';
     const ftH=match.score?.fullTime?.home??match.score?.halfTime?.home??null;
     const ftA=match.score?.fullTime?.away??match.score?.halfTime?.away??null;
-    const regH=match.score?.regularTime?.home;
-    const regA=match.score?.regularTime?.away;
-    // regularTime = 90-min score; fallback: subtract penalty goals from fullTime (API quirk)
-    const hs=hasScore?(regH!=null?regH:(hasPen&&ftH!=null?ftH-pen.home:ftH)):null;
-    const as=hasScore?(regA!=null?regA:(hasPen&&ftA!=null?ftA-pen.away:ftA)):null;
+    const regH=match.score?.regularTime?.home??null;
+    const regA=match.score?.regularTime?.away??null;
+    const etH=match.score?.extraTime?.home??0;
+    const etA=match.score?.extraTime?.away??0;
+    // Main score = regularTime; fallback to fullTime
+    const hs=hasScore?(regH??ftH):null;
+    const as=hasScore?(regA??ftA):null;
+    // Penalty goals = fullTime - regularTime - extraTime (score.penalties is tiros, not goles)
+    const ph=(isPen&&hs!=null&&ftH!=null)?ftH-hs-etH:null;
+    const pa=(isPen&&as!=null&&ftA!=null)?ftA-as-etA:null;
     const entry={venue,city,state,text};
     if(hs!==null&&as!==null){
       entry.h=hs; entry.a=as;
-      if(hasPen){entry.ph=pen.home; entry.pa=pen.away;}
+      if(ph!==null&&pa!==null){
+        entry.ph=ph; entry.pa=pa;
+        // winner from fullTime comparison (score.winner may be null in API)
+        if(ftH!=null&&ftA!=null) entry.winner=ftH>ftA?'h':'a';
+      }
     }
     KO[mId]=entry;
   }
@@ -978,8 +986,8 @@ function resolve(ref){
     const mId=ref.slice(2), d=KO[mId], m=ALL_KO.find(x=>x.id===mId);
     if(m&&d&&d.h!==undefined&&d.a!==undefined){
       const h=resolve(m.home),a=resolve(m.away);
+      if(d.winner) return d.winner==='h'?h:a;   // penalty winner from API
       if(+d.h>+d.a) return h; if(+d.a>+d.h) return a;
-      // Tied in ET → resolve via penalty shootout
       if(d.ph!==undefined&&d.pa!==undefined){
         if(+d.ph>+d.pa) return h; if(+d.pa>+d.ph) return a;
       }
@@ -1170,7 +1178,8 @@ function bkTeamRow(ref,mId,isHome){
   const m=ALL_KO.find(x=>x.id===mId);
   const winReg=hasScore&&((isHome&&+d.h>+d.a)||(!isHome&&+d.a>+d.h));
   const winPen=hasScore&&hasPen&&+d.h===+d.a&&(isHome?+d.ph>+d.pa:+d.pa>+d.ph);
-  const win=m&&(winReg||winPen);
+  const winApi=hasScore&&d.winner&&(isHome?d.winner==='h':d.winner==='a');
+  const win=m&&(winReg||winPen||winApi);
   const lbl=refShort(ref);
 
   if(unres){
@@ -1461,13 +1470,15 @@ function renderToday(){
     const hN=mapName(m.homeTeam?.name)||mapName(m.homeTeam?.shortName)||m.homeTeam?.shortName||'?';
     const aN=mapName(m.awayTeam?.name)||mapName(m.awayTeam?.shortName)||m.awayTeam?.shortName||'?';
     const hasScore=m.status==='FINISHED'||m.status==='IN_PLAY'||m.status==='PAUSED';
-    const mpen=m.score?.penalties;
-    const mhasPen=mpen?.home!=null&&mpen?.away!=null;
+    const misPen=m.score?.duration==='PENALTY_SHOOTOUT';
     const mftH=m.score?.fullTime?.home,mftA=m.score?.fullTime?.away;
     const mregH=m.score?.regularTime?.home,mregA=m.score?.regularTime?.away;
-    const hs=hasScore?(mregH!=null?mregH:(mhasPen&&mftH!=null?mftH-mpen.home:mftH)??m.score?.halfTime?.home??'–'):'–';
-    const as=hasScore?(mregA!=null?mregA:(mhasPen&&mftA!=null?mftA-mpen.away:mftA)??m.score?.halfTime?.away??'–'):'–';
-    const penStr=mhasPen?`<div style="font-size:.68rem;text-align:center;color:var(--txt2);margin:0 0 4px">(${mpen.home}–${mpen.away} pen)</div>`:'';
+    const metH=m.score?.extraTime?.home??0,metA=m.score?.extraTime?.away??0;
+    const hs=hasScore?(mregH??mftH??m.score?.halfTime?.home??'–'):'–';
+    const as=hasScore?(mregA??mftA??m.score?.halfTime?.away??'–'):'–';
+    const mph=(misPen&&mftH!=null&&mregH!=null)?mftH-mregH-metH:null;
+    const mpa=(misPen&&mftA!=null&&mregA!=null)?mftA-mregA-metA:null;
+    const penStr=(mph!=null&&mpa!=null)?`<div style="font-size:.68rem;text-align:center;color:var(--txt2);margin:0 0 4px">(${mph}–${mpa} pen)</div>`:'';
 
     let statusCls='sched',statusTxt='';
     if(m.status==='IN_PLAY'){statusCls='live';statusTxt='🔴 EN VIVO'+(m.minute?' · '+m.minute+"'":'');}
