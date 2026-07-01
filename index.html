@@ -1403,6 +1403,8 @@ function getPoss(ref){
   const mId=ref.slice(2);
   const m=ALL_KO.find(x=>x.id===mId);
   if(!m) return [resolve(ref)];
+  const rn=resolve(ref);
+  if(!rn.startsWith('Gan.')&&!rn.startsWith('Per.')&&!rn.startsWith('__3RD__')) return [rn];
   return [...new Set([...getPoss(m.home),...getPoss(m.away)])];
 }
 
