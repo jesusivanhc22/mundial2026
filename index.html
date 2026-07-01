@@ -1680,8 +1680,10 @@ function renderStats(){
 
   // Highlights
   const sorted=finished.map(m=>{
-    const hg=m.score?.fullTime?.home??0,ag=m.score?.fullTime?.away??0;
-    return{h:tn(m.homeTeam),a:tn(m.awayTeam),hg,ag,total:hg+ag,diff:Math.abs(hg-ag),date:m.utcDate};
+    const isPen=m.score?.duration==='PENALTY_SHOOTOUT';
+    const hg=isPen?(m.score?.regularTime?.home??0):(m.score?.fullTime?.home??0);
+    const ag=isPen?(m.score?.regularTime?.away??0):(m.score?.fullTime?.away??0);
+    return{h:tn(m.homeTeam),a:tn(m.awayTeam),hg,ag,total:hg+ag,diff:Math.abs(hg-ag),date:m.utcDate,isPen};
   }).sort((a,b)=>b.total-a.total||b.diff-a.diff);
 
   let hl='<table class="sc-tbl"><thead><tr><th></th><th>Partido</th><th>Resultado</th><th>Goles</th></tr></thead><tbody>';
@@ -1693,7 +1695,8 @@ function renderStats(){
     const d=new Date(m.date);
     const ds=d.toLocaleDateString('es-MX',{day:'numeric',month:'short'});
     const lbl=m.diff>=3?'🔥 Goleada':m.total>=4?'⚡ Golazo':'🏟️';
-    hl+=`<tr><td>${lbl}</td><td><div class="plr">${flag(m.h,17,12)}<span class="plr-name">${m.h}</span><span style="color:var(--txt2);margin:0 4px">vs</span>${flag(m.a,17,12)}<span class="plr-name">${m.a}</span></div></td><td><strong>${m.hg} – ${m.ag}</strong></td><td>${m.total} (${ds})</td></tr>`;
+    const penTag=m.isPen?' <span style="font-size:.7em;color:var(--txt2)">(pen)</span>':'';
+    hl+=`<tr><td>${lbl}</td><td><div class="plr">${flag(m.h,17,12)}<span class="plr-name">${m.h}</span><span style="color:var(--txt2);margin:0 4px">vs</span>${flag(m.a,17,12)}<span class="plr-name">${m.a}</span></div></td><td><strong>${m.hg} – ${m.ag}</strong>${penTag}</td><td>${m.total} (${ds})</td></tr>`;
   });
   hl+='</tbody></table>';
   document.getElementById('st-highlights').innerHTML=hl;
