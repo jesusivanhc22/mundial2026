@@ -239,6 +239,7 @@ header{background:linear-gradient(135deg,#0b2040,#07101f);padding:10px 16px;bord
   <div class="tab" onclick="go('gol')">📈 Estadísticas</div>
   <div class="tab" onclick="go('pred')">🔮 Predicciones</div>
   <div class="tab" onclick="go('ruta')">Ruta de Equipo</div>
+  <div class="tab" onclick="go('uso')">📶 Uso</div>
 </div>
 
 <div id="p-today" class="pane on">
@@ -345,6 +346,36 @@ header{background:linear-gradient(135deg,#0b2040,#07101f);padding:10px 16px;bord
     </select>
   </div>
   <div id="ruta-out"></div>
+</div>
+
+<div id="p-uso" class="pane">
+  <p style="font-size:.78rem;color:var(--txt2);margin-bottom:14px">
+    Monitor de uso de la app (conteo anónimo, sin cookies de terceros). "Activos hoy" son dispositivos distintos que
+    abrieron la app en el día en curso — no una medición de conexión en tiempo real.
+  </p>
+  <div class="sc-grid">
+    <div class="snap-card">
+      <div class="snap-hdr"><span class="snap-grp">🟢 Activos hoy</span><span class="snap-md" id="uso-today-lbl"></span></div>
+      <div class="snap-body" style="padding:18px;text-align:center">
+        <div style="font-size:2.2rem;font-weight:700" id="uso-today">–</div>
+        <div style="font-size:.7rem;color:var(--txt2);margin-top:4px">dispositivos únicos hoy</div>
+      </div>
+    </div>
+    <div class="snap-card">
+      <div class="snap-hdr"><span class="snap-grp">👥 Usuarios únicos</span><span class="snap-md">Histórico</span></div>
+      <div class="snap-body" style="padding:18px;text-align:center">
+        <div style="font-size:2.2rem;font-weight:700" id="uso-unique">–</div>
+        <div style="font-size:.7rem;color:var(--txt2);margin-top:4px">dispositivos distintos desde el lanzamiento</div>
+      </div>
+    </div>
+    <div class="snap-card">
+      <div class="snap-hdr"><span class="snap-grp">📈 Visitas totales</span><span class="snap-md">Histórico</span></div>
+      <div class="snap-body" style="padding:18px;text-align:center">
+        <div style="font-size:2.2rem;font-weight:700" id="uso-hits">–</div>
+        <div style="font-size:.7rem;color:var(--txt2);margin-top:4px">cargas de página acumuladas</div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -1440,7 +1471,7 @@ function renderAll(){
 }
 
 function go(id){
-  const tabIds=['today','snap','gaf','ggl','bracket','gol','pred','ruta'];
+  const tabIds=['today','snap','gaf','ggl','bracket','gol','pred','ruta','uso'];
   document.querySelectorAll('.tab').forEach((t,i)=>{
     t.classList.toggle('active',tabIds[i]===id);
   });
@@ -2193,8 +2224,47 @@ function populateSel(){
   });
 }
 
+// ─── MONITOR DE USO (contador anónimo vía counterapi.dev, sin cuenta) ────────
+const USO_NS='mundial2026-jesusivanhc22';
+function usoUrl(counter,action){return `https://api.counterapi.dev/v1/${USO_NS}/${counter}/${action||''}`;}
+function todayMX(){return new Date().toLocaleDateString('en-CA',{timeZone:'America/Mexico_City'});} // YYYY-MM-DD
+function renderUso(stats){
+  if(stats.hits!=null) document.getElementById('uso-hits').textContent=stats.hits.toLocaleString('es-MX');
+  if(stats.unique!=null) document.getElementById('uso-unique').textContent=stats.unique.toLocaleString('es-MX');
+  if(stats.today!=null) document.getElementById('uso-today').textContent=stats.today.toLocaleString('es-MX');
+  const lbl=document.getElementById('uso-today-lbl');
+  if(lbl) lbl.textContent=todayMX();
+}
+async function trackUsage(){
+  try{
+    // 1) Visita total (se cuenta en cada carga de página)
+    const hitsR=await fetch(usoUrl('total-hits','up'));
+    const hitsD=await hitsR.json();
+    renderUso({hits:hitsD.count});
+
+    // 2) Usuario único histórico (solo incrementa la primera vez en este dispositivo)
+    let uid=localStorage.getItem('wc26_uid');
+    const isNewDevice=!uid;
+    if(isNewDevice){uid=crypto.randomUUID();localStorage.setItem('wc26_uid',uid);}
+    const uniqueR=await fetch(usoUrl('unique-visitors',isNewDevice?'up':''));
+    const uniqueD=await uniqueR.json();
+    renderUso({unique:uniqueD.count});
+
+    // 3) Activos hoy (dispositivos únicos que abrieron la app en el día en curso, hora CDMX)
+    const today=todayMX();
+    const isNewToday=localStorage.getItem('wc26_last_day')!==today;
+    if(isNewToday) localStorage.setItem('wc26_last_day',today);
+    const dayR=await fetch(usoUrl('daily-'+today,isNewToday?'up':''));
+    const dayD=await dayR.json();
+    renderUso({today:dayD.count});
+  }catch(e){
+    console.warn('Monitor de uso no disponible:',e.message);
+  }
+}
+
 populateSel();
 renderAll();
+trackUsage();
 fetchTeams();
 fetchAll().then(()=>{fetchScorers();scheduleRefresh();_lastFetchAt=Date.now();});
 let _refreshTimer=null;
