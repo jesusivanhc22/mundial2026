@@ -774,12 +774,14 @@ function processMatches(matches){
     const regA=match.score?.regularTime?.away??null;
     const etH=match.score?.extraTime?.home??0;
     const etA=match.score?.extraTime?.away??0;
-    // Main score = regularTime; fallback to fullTime
-    const hs=hasScore?(regH??ftH):null;
-    const as=hasScore?(regA??ftA):null;
-    // Penalty goals = fullTime - regularTime - extraTime (score.penalties is tiros, not goles)
-    const ph=(isPen&&hs!=null&&ftH!=null)?ftH-hs-etH:null;
-    const pa=(isPen&&as!=null&&ftA!=null)?ftA-as-etA:null;
+    // Main score: en tanda de penales usamos regularTime (fullTime suma los goles de
+    // la tanda); en tiempo extra (sin penales) usamos fullTime, que ya incluye el gol
+    // decisivo del alargue y regularTime por sí solo puede mostrar un empate falso.
+    const hs=hasScore?(isPen?(regH??ftH):(ftH??regH)):null;
+    const as=hasScore?(isPen?(regA??ftA):(ftA??regA)):null;
+    // Penalty goals = fullTime - regularTime - extraTime (score.penalties es tiros, no goles)
+    const ph=(isPen&&regH!=null&&ftH!=null)?ftH-regH-etH:null;
+    const pa=(isPen&&regA!=null&&ftA!=null)?ftA-regA-etA:null;
     const entry={venue,city,state,text};
     if(hs!==null&&as!==null){
       entry.h=hs; entry.a=as;
@@ -1521,8 +1523,8 @@ function renderToday(){
     const mftH=m.score?.fullTime?.home,mftA=m.score?.fullTime?.away;
     const mregH=m.score?.regularTime?.home,mregA=m.score?.regularTime?.away;
     const metH=m.score?.extraTime?.home??0,metA=m.score?.extraTime?.away??0;
-    const hs=hasScore?(mregH??mftH??m.score?.halfTime?.home??'–'):'–';
-    const as=hasScore?(mregA??mftA??m.score?.halfTime?.away??'–'):'–';
+    const hs=hasScore?((misPen?(mregH??mftH):(mftH??mregH))??m.score?.halfTime?.home??'–'):'–';
+    const as=hasScore?((misPen?(mregA??mftA):(mftA??mregA))??m.score?.halfTime?.away??'–'):'–';
     const mph=(misPen&&mftH!=null&&mregH!=null)?mftH-mregH-metH:null;
     const mpa=(misPen&&mftA!=null&&mregA!=null)?mftA-mregA-metA:null;
     const penStr=(mph!=null&&mpa!=null)?`<div style="font-size:.68rem;text-align:center;color:var(--txt2);margin:0 0 4px">(${mph}–${mpa} pen)</div>`:'';
