@@ -1205,7 +1205,7 @@ function slotConfidence(ref,name){
     const g=ref.slice(2);
     return groupDone(g)?'certain':'uncertain';
   }
-  if(ref.startsWith('W_')){
+  if(ref.startsWith('W_')||ref.startsWith('L_')){
     const d=KO[ref.slice(2)];
     return(d&&d.h!==undefined&&d.a!==undefined)?'certain':'uncertain';
   }
