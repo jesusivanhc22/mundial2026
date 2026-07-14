@@ -441,7 +441,7 @@ const KO_API_MAP = {
   537422:'M81',537421:'M82',537420:'M83',537419:'M84',
   537429:'M85',537428:'M86',537427:'M87',537430:'M88',
   537375:'M89',537376:'M90',537377:'M91',537378:'M92',
-  537379:'M93',537380:'M94',537381:'M95',537382:'M96',
+  537379:'M94',537380:'M93',537381:'M95',537382:'M96',
   537383:'M97',537384:'M98',537385:'M99',537386:'M100',
   537387:'M101',537388:'M102',537389:'M103',537390:'M104'
 };
@@ -782,14 +782,17 @@ function processMatches(matches){
     // Penalty goals = fullTime - regularTime - extraTime (score.penalties es tiros, no goles)
     const ph=(isPen&&regH!=null&&ftH!=null)?ftH-regH-etH:null;
     const pa=(isPen&&regA!=null&&ftA!=null)?ftA-regA-etA:null;
-    const entry={venue,city,state,text};
+    // El home/away de la API no siempre coincide con el home/away interno de ALL_KO
+    // (que sigue la procedencia del cruce, no el fixture real). Guardamos los nombres
+    // reales junto al marcador para poder resolver por identidad de equipo, no por
+    // posición — evita bugs como mostrar al perdedor como ganador cuando el orden
+    // está invertido.
+    const entry={venue,city,state,text,hName:tryMapTeam(match.homeTeam),aName:tryMapTeam(match.awayTeam)};
     if(hs!==null&&as!==null){
       entry.h=hs; entry.a=as;
-      if(ph!==null&&pa!==null){
-        entry.ph=ph; entry.pa=pa;
-        // winner from fullTime comparison (score.winner may be null in API)
-        if(ftH!=null&&ftA!=null) entry.winner=ftH>ftA?'h':'a';
-      }
+      if(ph!==null&&pa!==null){entry.ph=ph; entry.pa=pa;}
+      // Ganador real (fullTime ya refleja el resultado final, incluidos penales)
+      if(ftH!=null&&ftA!=null&&ftH!==ftA) entry.winnerName=ftH>ftA?entry.hName:entry.aName;
     }
     KO[mId]=entry;
   }
@@ -1031,34 +1034,28 @@ function resolve(ref){
     return _provisionalThirds[ref] || '__3RD__'+ref.slice(2);}
   if(ref.startsWith('W_')){
     const mId=ref.slice(2), d=KO[mId], m=ALL_KO.find(x=>x.id===mId);
-    if(m&&d&&d.h!==undefined&&d.a!==undefined){
+    if(m&&d&&d.winnerName){
       const h=resolve(m.home),a=resolve(m.away);
-      if(d.winner) return d.winner==='h'?h:a;   // penalty winner from API
-      if(+d.h>+d.a) return h; if(+d.a>+d.h) return a;
-      if(d.ph!==undefined&&d.pa!==undefined){
-        if(+d.ph>+d.pa) return h; if(+d.pa>+d.ph) return a;
-      }
+      if(d.winnerName===h) return h;
+      if(d.winnerName===a) return a;
     }
     return 'Gan.'+mId;}
   if(ref.startsWith('L_')){
     const mId=ref.slice(2), d=KO[mId], m=ALL_KO.find(x=>x.id===mId);
-    if(m&&d&&d.h!==undefined&&d.a!==undefined){
+    if(m&&d&&d.winnerName){
       const h=resolve(m.home),a=resolve(m.away);
-      if(+d.h>+d.a) return a; if(+d.a>+d.h) return h;
+      if(d.winnerName===h) return a;
+      if(d.winnerName===a) return h;
     }
     return 'Per.'+mId;}
   return ref;
 }
 
 function isWinner(mId,ref){
-  const d=KO[mId];if(!d||d.h===undefined||d.a===undefined) return false;
-  const m=ALL_KO.find(x=>x.id===mId);if(!m) return false;
+  const d=KO[mId];if(!d||!d.winnerName) return false;
   const rn=resolve(ref);
   if(rn.startsWith('__3RD__')) return false; // unresolved slot can't be a winner
-  const ht=resolve(m.home),at=resolve(m.away);
-  if(rn===ht) return +d.h>+d.a;
-  if(rn===at) return +d.a>+d.h;
-  return false;
+  return rn===d.winnerName;
 }
 
 // ─── RENDER: SNAPSHOT ────────────────────────────────────────────────────────
@@ -1219,14 +1216,12 @@ function bkTeamRow(ref,mId,isHome){
   const name=resolve(ref);
   const d=KO[mId]||{};
   const hasScore=d.h!==undefined&&d.a!==undefined;
-  const hasPen=d.ph!==undefined&&d.pa!==undefined;
-  const sc=isHome?d.h:d.a;
+  // El marcador se asocia por nombre real de equipo (hName/aName), no por
+  // posición home/away interna, porque esta última sigue la procedencia del
+  // cruce y puede no coincidir con el home/away del fixture real de la API.
+  const sc=hasScore?(name===d.hName?d.h:(name===d.aName?d.a:undefined)):undefined;
   const unres=name.startsWith('__3RD__')||name.startsWith('Gan.')||name.startsWith('Per.');
-  const m=ALL_KO.find(x=>x.id===mId);
-  const winReg=hasScore&&((isHome&&+d.h>+d.a)||(!isHome&&+d.a>+d.h));
-  const winPen=hasScore&&hasPen&&+d.h===+d.a&&(isHome?+d.ph>+d.pa:+d.pa>+d.ph);
-  const winApi=hasScore&&d.winner&&(isHome?d.winner==='h':d.winner==='a');
-  const win=m&&(winReg||winPen||winApi);
+  const win=hasScore&&!!d.winnerName&&name===d.winnerName;
   const lbl=refShort(ref);
 
   if(unres){
@@ -1235,7 +1230,7 @@ function bkTeamRow(ref,mId,isHome){
 <div class="bk-mf-placeholder">?</div>
 <span class="bk-mn" title="${display}">${display}</span>
 <span class="bk-mp">${lbl}</span>
-${hasScore?`<span class="bk-ms">${sc}</span>`:''}
+${sc!==undefined?`<span class="bk-ms">${sc}</span>`:''}
 </div>`;
   }
 
@@ -1255,7 +1250,7 @@ ${hasScore?`<span class="bk-ms">${sc}</span>`:''}
 ${fUrl?`<img class="bk-mf" src="${fUrl}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt=""><div class="bk-mf-placeholder" style="display:none">?</div>`:`<div class="bk-mf-placeholder">?</div>`}
 <span class="bk-mn" title="${name}">${name}${clinchBadge}${confBadge}</span>
 <span class="bk-mp">${lbl}</span>
-${hasScore?`<span class="bk-ms">${sc}</span>`:''}
+${sc!==undefined?`<span class="bk-ms">${sc}</span>`:''}
 </div>`;
 }
 
@@ -1270,8 +1265,12 @@ function bkCard(mId){
   const city=d.city||meta.city||'';
   const date=meta.date||'';
   const venueLine=(city||venue)?`<div style="font-size:.6rem;color:var(--txt2);padding:2px 6px 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">📍 ${city||venue}${date?' · '+date:''}</div>`:'';
-  const penLine=(d.ph!==undefined&&d.pa!==undefined)?
-    `<div style="font-size:.55rem;text-align:center;color:var(--txt2);padding:1px 6px 3px">(${d.ph}–${d.pa} pen)</div>`:'';
+  // Orden del marcador de penales según m.home/m.away (no el home/away del fixture real)
+  const homeName=resolve(m.home),awayName=resolve(m.away);
+  const penH=homeName===d.hName?d.ph:(homeName===d.aName?d.pa:undefined);
+  const penA=awayName===d.hName?d.ph:(awayName===d.aName?d.pa:undefined);
+  const penLine=(penH!==undefined&&penA!==undefined)?
+    `<div style="font-size:.55rem;text-align:center;color:var(--txt2);padding:1px 6px 3px">(${penH}–${penA} pen)</div>`:'';
   return `<div class="bk-m" id="bk-${mId}">
 <div class="bk-mh"><span>${mId}</span>${badge}</div>
 ${bkTeamRow(m.home,mId,true)}
