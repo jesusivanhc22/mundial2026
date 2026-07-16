@@ -1607,7 +1607,10 @@ function renderScorers(){
     return;
   }
 
-  const byGoals=[..._scorers].sort((a,b)=>(b.goals||0)-(a.goals||0)).slice(0,20);
+  // Desempate estilo Bota de Oro: goles > asistencias > menos partidos jugados
+  const byGoals=[..._scorers].sort((a,b)=>
+    (b.goals||0)-(a.goals||0)||(b.assists||0)-(a.assists||0)||(a.playedMatches||0)-(b.playedMatches||0)
+  ).slice(0,20);
   let gh='';
   byGoals.forEach((s,i)=>{
     const tn=mapName(s.team?.name)||mapName(s.team?.shortName)||s.team?.shortName||'?';
@@ -2285,7 +2288,7 @@ function scheduleRefresh(){
   });
   // Intervalos más conservadores para no saturar corsproxy.io
   const ms=(hasLive||shouldBeLive)?3*60*1000:soonKO?5*60*1000:20*60*1000;
-  _refreshTimer=setInterval(()=>{fetchAll().then(()=>scheduleRefresh());},ms);
+  _refreshTimer=setInterval(()=>{fetchAll().then(()=>{fetchScorers();scheduleRefresh();});},ms);
   let _nextAt=Date.now()+ms;
   const nel=document.getElementById('next-upd');
   if(_countdownTimer) clearInterval(_countdownTimer);
