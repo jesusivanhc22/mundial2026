@@ -92,6 +92,25 @@ header{background:linear-gradient(135deg,#0b2040,#07101f);padding:10px 16px;bord
 .bk-3rd-label{font-size:.68rem;font-weight:700;color:var(--txt2);text-align:center;margin-top:12px}
 .bk-center-col .bk-m:first-of-type{border-color:var(--gold)}
 
+/* champion banner + fireworks */
+.champ-banner{position:relative;text-align:center;padding:6px 0 2px;overflow:visible}
+#fw-canvas{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:260px;height:200px;pointer-events:none;z-index:0}
+.champ-flag-wrap{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.champ-flag-big{width:96px;height:auto;border-radius:6px;box-shadow:0 0 22px 4px var(--gold),0 2px 8px rgba(0,0,0,.4);border:2px solid var(--gold)}
+.champ-name{font-weight:800;font-size:.95rem;color:var(--gold);letter-spacing:.3px;text-shadow:0 0 10px rgba(255,215,0,.5)}
+.champ-tag{font-size:.62rem;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:1px}
+
+/* podium */
+.podium-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.podium-card{border:1px solid var(--bd);border-radius:10px;background:var(--s2);padding:14px 10px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px}
+.podium-card.gold{border-color:#e8c547;box-shadow:0 0 14px rgba(232,197,71,.25)}
+.podium-card.silver{border-color:#c7cdd6;box-shadow:0 0 10px rgba(199,205,214,.2)}
+.podium-card.bronze{border-color:#cd8a52;box-shadow:0 0 10px rgba(205,138,82,.18)}
+.podium-medal{font-size:1.6rem;line-height:1}
+.podium-card img{width:44px;height:auto;border-radius:4px;border:1px solid var(--bd)}
+.podium-team{font-weight:700;font-size:.82rem}
+.podium-rank{font-size:.62rem;color:var(--txt2);text-transform:uppercase;letter-spacing:.5px}
+
 /* group details */
 .ggroups{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px}
 .gcard{background:var(--s1);border:1px solid var(--bd);border-radius:8px;overflow:hidden}
@@ -271,6 +290,7 @@ header{background:linear-gradient(135deg,#0b2040,#07101f);padding:10px 16px;bord
     <span style="opacity:.78">~ clasificado, lugar pendiente</span>
     <span style="opacity:.48">? proyección — puede cambiar</span>
   </div>
+  <div id="podium-box" class="podium-grid" style="display:none"></div>
   <div class="bk-wrap">
     <div class="bk-container" id="bk-container">
       <svg class="bk-svg" id="bk-svg" xmlns="http://www.w3.org/2000/svg"></svg>
@@ -460,6 +480,30 @@ const FLAGS = {
   'Argentina':'ar','Argelia':'dz','Austria':'at','Jordania':'jo',
   'Portugal':'pt','DR Congo':'cd','Uzbekistán':'uz','Colombia':'co',
   'Inglaterra':'gb-eng','Croacia':'hr','Ghana':'gh','Panamá':'pa'
+};
+// Colores principales de bandera (para animación de fuegos artificiales)
+const COUNTRY_COLORS = {
+  'México':['#006847','#fff','#ce1126'],'Sudáfrica':['#007a4d','#ffb612','#000','#e03c31'],
+  'Corea del Sur':['#c60c30','#003478'],'Chequia':['#11457e','#d7141a','#fff'],
+  'Canadá':['#ff0000','#fff'],'Bosnia y Herz.':['#002395','#fecb00'],'Catar':['#8d1b3d','#fff'],
+  'Suiza':['#ff0000','#fff'],'Brasil':['#009c3b','#ffdf00','#002776'],'Marruecos':['#c1272d','#006233'],
+  'Haití':['#00209f','#d21034'],'Escocia':['#005eb8','#fff'],'EUA':['#b22234','#fff','#3c3b6e'],
+  'Paraguay':['#d52b1e','#fff','#0038a8'],'Australia':['#00008b','#ff0000','#fff'],
+  'Turquía':['#e30a17','#fff'],'Alemania':['#000','#dd0000','#ffce00'],'Curazao':['#002b7f','#f9e814'],
+  'Costa de Marfil':['#f77f00','#fff','#009e60'],'Ecuador':['#ffdd00','#0072ce','#ed1c24'],
+  'P. Bajos':['#ae1c28','#fff','#21468b'],'Japón':['#bc002d','#fff'],'Suecia':['#006aa7','#fecc00'],
+  'Túnez':['#e70013','#fff'],'Bélgica':['#000','#ffd90c','#ed2939'],'Egipto':['#ce1126','#fff','#000'],
+  'Irán':['#239f40','#fff','#da0000'],'Nueva Zelanda':['#00247d','#fff','#cc142b'],
+  'España':['#aa151b','#f1bf00'],'Cabo Verde':['#003893','#fff','#cf2027'],
+  'Arabia Saudita':['#006c35','#fff'],'Uruguay':['#0038a8','#fff','#fcd116'],
+  'Francia':['#0055a4','#fff','#ef4135'],'Senegal':['#00853f','#fdef42','#e31b23'],
+  'Irak':['#ce1126','#fff','#000'],'Noruega':['#ba0c2f','#fff','#00205b'],
+  'Argentina':['#75aadb','#fff','#ffb612'],'Argelia':['#006233','#fff','#d21034'],
+  'Austria':['#ed2939','#fff'],'Jordania':['#000','#fff','#007a3d','#ce1126'],
+  'Portugal':['#046a38','#da020e','#ffd700'],'DR Congo':['#007fff','#f7d618','#ce1021'],
+  'Uzbekistán':['#0099b5','#fff','#1eb53a'],'Colombia':['#fcd116','#003893','#ce1126'],
+  'Inglaterra':['#fff','#ce1124'],'Croacia':['#ff0000','#fff','#171796'],
+  'Ghana':['#ce1126','#fcd116','#006b3f'],'Panamá':['#005293','#d21034','#fff']
 };
 function flagUrl(name,w=20){
   const c=FLAGS[name]; if(!c) return '';
@@ -1279,6 +1323,69 @@ ${penLine}${venueLine}
 </div>`;
 }
 
+function getPodium(){
+  const d104=KO['M104'];
+  if(!d104||d104.h===undefined||d104.a===undefined) return null;
+  const champ=resolve('W_M104'), runner=resolve('L_M104');
+  if(champ.startsWith('Gan.')||champ.startsWith('__3RD__')) return null;
+  const d103=KO['M103'];
+  const third=(d103&&d103.h!==undefined&&d103.a!==undefined)?resolve('W_M103'):null;
+  return {champ,runner,third};
+}
+
+function renderPodium(podium){
+  const box=document.getElementById('podium-box');
+  if(!box) return;
+  if(!podium){box.style.display='none';box.innerHTML='';return;}
+  box.style.display='';
+  const card=(medal,cls,label,team)=>`<div class="podium-card ${cls}">
+<div class="podium-medal">${medal}</div>
+${flag(team,44,30)}
+<div class="podium-team">${team}</div>
+<div class="podium-rank">${label}</div>
+</div>`;
+  box.innerHTML=card('🥇','gold','Campeón',podium.champ)
+    +card('🥈','silver','Subcampeón',podium.runner)
+    +(podium.third?card('🥉','bronze','3er Lugar',podium.third):'');
+}
+
+let _fwToken=0;
+function startFireworks(colors){
+  const canvas=document.getElementById('fw-canvas');
+  if(!canvas) return;
+  const myToken=++_fwToken;
+  const ctx=canvas.getContext('2d');
+  canvas.width=canvas.clientWidth||260;
+  canvas.height=canvas.clientHeight||200;
+  let particles=[];
+  let lastBurst=0;
+  function spawnBurst(){
+    const x=canvas.width*(0.25+Math.random()*0.5);
+    const y=canvas.height*(0.15+Math.random()*0.35);
+    const n=30;
+    for(let i=0;i<n;i++){
+      const angle=(Math.PI*2*i)/n+Math.random()*0.25;
+      const speed=1+Math.random()*2.4;
+      particles.push({x,y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,life:1,color:colors[Math.floor(Math.random()*colors.length)]});
+    }
+  }
+  function loop(ts){
+    if(myToken!==_fwToken||!canvas.isConnected) return;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    if(!lastBurst||ts-lastBurst>1000){spawnBurst();lastBurst=ts;}
+    particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.035;p.life-=0.014;});
+    particles=particles.filter(p=>p.life>0);
+    particles.forEach(p=>{
+      ctx.globalAlpha=Math.max(p.life,0);
+      ctx.fillStyle=p.color;
+      ctx.beginPath();ctx.arc(p.x,p.y,2.4,0,Math.PI*2);ctx.fill();
+    });
+    ctx.globalAlpha=1;
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+}
+
 function renderBracket(){
   const fill=(id,arr)=>{const el=document.getElementById(id);if(el) el.innerHTML=arr.map(bkCard).join('');};
   fill('bkc-lr32',BK_L32);
@@ -1289,13 +1396,25 @@ function renderBracket(){
   fill('bkc-rqf',BK_RQF);
   fill('bkc-rr16',BK_RR16);
   fill('bkc-rr32',BK_R32);
+  const podium=getPodium();
+  renderPodium(podium);
+  const champBanner=podium?`<div class="champ-banner">
+<canvas id="fw-canvas"></canvas>
+<div class="champ-flag-wrap">
+${flagUrl(podium.champ,320)?`<img class="champ-flag-big" src="${flagUrl(podium.champ,320)}" alt="${podium.champ}">`:''}
+<div class="champ-name">${podium.champ}</div>
+<div class="champ-tag">🏆 Campeón del Mundo</div>
+</div>
+</div>`:'';
   const center=document.getElementById('bkc-center');
   if(center) center.innerHTML=`
+${champBanner}
 <div class="bk-flabel">FINAL · 19 Jul</div>
 <div class="bk-trophy">🏆</div>
 ${bkCard('M104')}
 <div class="bk-3rd-label">3° Lugar</div>
 ${bkCard('M103')}`;
+  if(podium) startFireworks(COUNTRY_COLORS[podium.champ]||['#ffd700','#fff','#ff3b3b']);
   if(document.getElementById('p-bracket')?.classList.contains('on'))
     requestAnimationFrame(drawBracketLines);
 }
