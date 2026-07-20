@@ -93,12 +93,12 @@ header{background:linear-gradient(135deg,#0b2040,#07101f);padding:10px 16px;bord
 .bk-center-col .bk-m:first-of-type{border-color:var(--gold)}
 
 /* champion banner + fireworks */
-.champ-banner{position:relative;text-align:center;padding:6px 0 2px;overflow:visible}
-#fw-canvas{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:260px;height:200px;pointer-events:none;z-index:0}
-.champ-flag-wrap{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:4px}
-.champ-flag-big{width:96px;height:auto;border-radius:6px;box-shadow:0 0 22px 4px var(--gold),0 2px 8px rgba(0,0,0,.4);border:2px solid var(--gold)}
-.champ-name{font-weight:800;font-size:.95rem;color:var(--gold);letter-spacing:.3px;text-shadow:0 0 10px rgba(255,215,0,.5)}
-.champ-tag{font-size:.62rem;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:1px}
+.champ-banner{position:relative;text-align:center;padding:14px 0 8px;overflow:visible;min-height:340px}
+#fw-canvas{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:440px;height:320px;pointer-events:none;z-index:0}
+.champ-flag-wrap{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:6px}
+.champ-flag-big{width:180px;height:auto;border-radius:8px;box-shadow:0 0 34px 8px var(--gold),0 4px 14px rgba(0,0,0,.45);border:3px solid var(--gold)}
+.champ-name{font-weight:800;font-size:1.3rem;color:var(--gold);letter-spacing:.3px;text-shadow:0 0 14px rgba(255,215,0,.6)}
+.champ-tag{font-size:.72rem;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:1px}
 
 /* podium */
 .podium-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
@@ -1355,30 +1355,30 @@ function startFireworks(colors){
   if(!canvas) return;
   const myToken=++_fwToken;
   const ctx=canvas.getContext('2d');
-  canvas.width=canvas.clientWidth||260;
-  canvas.height=canvas.clientHeight||200;
+  canvas.width=canvas.clientWidth||440;
+  canvas.height=canvas.clientHeight||320;
   let particles=[];
   let lastBurst=0;
   function spawnBurst(){
-    const x=canvas.width*(0.25+Math.random()*0.5);
+    const x=canvas.width*(0.2+Math.random()*0.6);
     const y=canvas.height*(0.15+Math.random()*0.35);
-    const n=30;
+    const n=55;
     for(let i=0;i<n;i++){
       const angle=(Math.PI*2*i)/n+Math.random()*0.25;
-      const speed=1+Math.random()*2.4;
+      const speed=1.6+Math.random()*4.2;
       particles.push({x,y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,life:1,color:colors[Math.floor(Math.random()*colors.length)]});
     }
   }
   function loop(ts){
     if(myToken!==_fwToken||!canvas.isConnected) return;
     ctx.clearRect(0,0,canvas.width,canvas.height);
-    if(!lastBurst||ts-lastBurst>1000){spawnBurst();lastBurst=ts;}
-    particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.035;p.life-=0.014;});
+    if(!lastBurst||ts-lastBurst>750){spawnBurst();lastBurst=ts;}
+    particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.045;p.life-=0.011;});
     particles=particles.filter(p=>p.life>0);
     particles.forEach(p=>{
       ctx.globalAlpha=Math.max(p.life,0);
       ctx.fillStyle=p.color;
-      ctx.beginPath();ctx.arc(p.x,p.y,2.4,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.arc(p.x,p.y,3.4,0,Math.PI*2);ctx.fill();
     });
     ctx.globalAlpha=1;
     requestAnimationFrame(loop);
@@ -1764,7 +1764,11 @@ function renderStats(){
   let totalGoals=0;
   for(const m of finished){
     const h=tn(m.homeTeam),a=tn(m.awayTeam);
-    const hg=m.score?.fullTime?.home??0,ag=m.score?.fullTime?.away??0;
+    // En tanda de penales, fullTime suma los goles de la tanda: usar regularTime.
+    // En tiempo extra (decidido sin penales), fullTime ya incluye el gol del alargue.
+    const isPen=m.score?.duration==='PENALTY_SHOOTOUT';
+    const hg=isPen?(m.score?.regularTime?.home??m.score?.fullTime?.home??0):(m.score?.fullTime?.home??m.score?.regularTime?.home??0);
+    const ag=isPen?(m.score?.regularTime?.away??m.score?.fullTime?.away??0):(m.score?.fullTime?.away??m.score?.regularTime?.away??0);
     totalGoals+=hg+ag;
     const ht=ensure(h),at=ensure(a);
     ht.gf+=hg;ht.ga+=ag;ht.pj++;
