@@ -315,10 +315,6 @@ header{background:linear-gradient(135deg,#0b2040,#07101f);padding:10px 16px;bord
       <div class="snap-body" style="padding:0"><table class="sc-tbl" id="sc-goals"><thead><tr><th>#</th><th>Jugador</th><th>Goles</th><th>Asist.</th><th>Pen.</th><th>PJ</th></tr></thead><tbody><tr><td colspan="6" style="text-align:center;color:var(--txt2);padding:20px">Cargando datos…</td></tr></tbody></table></div>
     </div>
     <div class="snap-card">
-      <div class="snap-hdr"><span class="snap-grp">🎯 Asistencias</span><span class="snap-md">Top 20</span></div>
-      <div class="snap-body" style="padding:0"><table class="sc-tbl" id="sc-assists"><thead><tr><th>#</th><th>Jugador</th><th>Asist.</th><th>Goles</th><th>PJ</th></tr></thead><tbody><tr><td colspan="5" style="text-align:center;color:var(--txt2);padding:20px">Cargando datos…</td></tr></tbody></table></div>
-    </div>
-    <div class="snap-card">
       <div class="snap-hdr"><span class="snap-grp">⚔️ Mejor Ataque</span><span class="snap-md">Por goles anotados</span></div>
       <div class="snap-body" style="padding:0"><table class="sc-tbl" id="st-attack"><thead><tr><th>#</th><th>Equipo</th><th>GF</th><th>GC</th><th>DG</th><th>PJ</th><th>Prom.</th></tr></thead><tbody></tbody></table></div>
     </div>
@@ -1717,12 +1713,9 @@ async function fetchScorers(){
 
 function renderScorers(){
   const goalsBody=document.querySelector('#sc-goals tbody');
-  const assistsBody=document.querySelector('#sc-assists tbody');
 
   if(!_scorers.length){
-    const empty='<tr><td colspan="6" style="text-align:center;color:var(--txt2);padding:20px">Sin datos disponibles aún</td></tr>';
-    goalsBody.innerHTML=empty;
-    assistsBody.innerHTML=empty.replace('6','5');
+    goalsBody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--txt2);padding:20px">Sin datos disponibles aún</td></tr>';
     return;
   }
 
@@ -1738,19 +1731,6 @@ function renderScorers(){
     gh+=`<tr class="${top3}"><td>${medal||i+1}</td><td><div class="plr">${flag(tn,17,12)}<div><div class="plr-name">${s.player?.name||'?'}</div><div class="plr-team">${tn}</div></div></div></td><td><strong>${s.goals||0}</strong></td><td>${s.assists||0}</td><td>${s.penalties||0}</td><td>${s.playedMatches||0}</td></tr>`;
   });
   goalsBody.innerHTML=gh;
-
-  const byAssists=[..._scorers].filter(s=>(s.assists||0)>0).sort((a,b)=>(b.assists||0)-(a.assists||0)||(b.goals||0)-(a.goals||0)).slice(0,20);
-  let ah='';
-  if(!byAssists.length){
-    assistsBody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--txt2);padding:20px">Sin asistencias registradas aún</td></tr>';
-  } else {
-    byAssists.forEach((s,i)=>{
-      const tn=mapName(s.team?.name)||mapName(s.team?.shortName)||s.team?.shortName||'?';
-      const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
-      ah+=`<tr><td>${medal||i+1}</td><td><div class="plr">${flag(tn,17,12)}<div><div class="plr-name">${s.player?.name||'?'}</div><div class="plr-team">${tn}</div></div></div></td><td><strong>${s.assists||0}</strong></td><td>${s.goals||0}</td><td>${s.playedMatches||0}</td></tr>`;
-    });
-    assistsBody.innerHTML=ah;
-  }
 }
 
 function renderStats(){
@@ -1799,12 +1779,8 @@ function renderStats(){
 
   if(champDecided){
     awH+=acard('🏅','Balón de Oro','Rodri','España','Mejor jugador del Mundial',true);
-    if(ranked[0]) awH+=acard('🥈','Balón de Plata',ranked[0].player?.name||'?',sName(ranked[0]),`${ranked[0].goals||0}G + ${ranked[0].assists||0}A`,false);
-    if(ranked[1]) awH+=acard('🥉','Balón de Bronce',ranked[1].player?.name||'?',sName(ranked[1]),`${ranked[1].goals||0}G + ${ranked[1].assists||0}A`,false);
   } else {
     if(ranked[0]) awH+=acard('🏅','Balón de Oro',ranked[0].player?.name||'?',sName(ranked[0]),`${ranked[0].goals||0}G + ${ranked[0].assists||0}A`,true);
-    if(ranked[1]) awH+=acard('🥈','Balón de Plata',ranked[1].player?.name||'?',sName(ranked[1]),`${ranked[1].goals||0}G + ${ranked[1].assists||0}A`,false);
-    if(ranked[2]) awH+=acard('🥉','Balón de Bronce',ranked[2].player?.name||'?',sName(ranked[2]),`${ranked[2].goals||0}G + ${ranked[2].assists||0}A`,false);
   }
 
   const topScorer=_scorers.length?[..._scorers].sort((a,b)=>(b.goals||0)-(a.goals||0)||(b.assists||0)-(a.assists||0))[0]:null;
@@ -1832,12 +1808,6 @@ function renderStats(){
     }
   }
 
-  if(champDecided){
-    awH+=acard('🎯','Más Asistencias','Michael Olise','Francia','7 asistencias',false);
-  } else {
-    const topAssist=_scorers.length?[..._scorers].filter(s=>(s.assists||0)>0).sort((a,b)=>(b.assists||0)-(a.assists||0))[0]:null;
-    if(topAssist) awH+=acard('🎯','Más Asistencias',topAssist.player?.name||'?',sName(topAssist),`${topAssist.assists||0} asistencias`,false);
-  }
   if(champDecided){
     const ft=teams['P. Bajos'];
     awH+=acard('🎭','Equipo Más Entretenido','','P. Bajos',ft?`${ft.gf+ft.ga} goles en sus partidos (${ft.gf}GF + ${ft.ga}GC)`:'',false);
