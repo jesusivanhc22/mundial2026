@@ -1832,12 +1832,21 @@ function renderStats(){
     }
   }
 
-  const topAssist=_scorers.length?[..._scorers].filter(s=>(s.assists||0)>0).sort((a,b)=>(b.assists||0)-(a.assists||0))[0]:null;
-  if(topAssist) awH+=acard('🎯','Más Asistencias',topAssist.player?.name||'?',sName(topAssist),`${topAssist.assists||0} asistencias`,false);
+  if(champDecided){
+    awH+=acard('🎯','Más Asistencias','Michael Olise','Francia','7 asistencias',false);
+  } else {
+    const topAssist=_scorers.length?[..._scorers].filter(s=>(s.assists||0)>0).sort((a,b)=>(b.assists||0)-(a.assists||0))[0]:null;
+    if(topAssist) awH+=acard('🎯','Más Asistencias',topAssist.player?.name||'?',sName(topAssist),`${topAssist.assists||0} asistencias`,false);
+  }
+  if(champDecided){
+    const ft=teams['P. Bajos'];
+    awH+=acard('🎭','Equipo Más Entretenido','','P. Bajos',ft?`${ft.gf+ft.ga} goles en sus partidos (${ft.gf}GF + ${ft.ga}GC)`:'',false);
+  } else {
   const funTeams=Object.entries(teams).filter(([,t])=>t.pj>0).sort((a,b)=>(b[1].gf+b[1].ga)-(a[1].gf+a[1].ga)||(b[1].gf-a[1].gf));
   if(funTeams.length){
     const[fn,ft]=funTeams[0];
     awH+=acard('🎭','Equipo Más Entretenido','',fn,`${ft.gf+ft.ga} goles en sus partidos (${ft.gf}GF + ${ft.ga}GC)`,false);
+  }
   }
   if(champDecided){
     awH+=acard('🤝','Premio Fair Play','','P. Bajos','Mejor comportamiento del torneo',false);
